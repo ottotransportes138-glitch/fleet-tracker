@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fleet Tracker — Mapa ao Vivo</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="../css/main.css"/>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="logo">🚛 Fleet Tracker</div>
+  <nav class="nav-links">
+    <a href="index.html" class="active">Mapa ao vivo</a>
+    <a href="routes.html">Rotas</a>
+    <a href="vehicles.html">Veículos</a>
+    <a href="alerts.html">Alertas <span class="badge" id="alert-count">0</span></a>
+    <a href="reports.html">Relatórios</a>
+  </nav>
+  <div class="sidebar-vehicles" id="vehicle-list">
+    <p class="muted">Carregando veículos...</p>
+  </div>
+</nav>
+
+<main class="map-container">
+  <div id="map"></div>
+  <div class="status-bar">
+    <span id="ws-status" class="status-dot offline"></span>
+    <span id="ws-label">Conectando...</span>
+    <span class="ml-auto" id="last-update">—</span>
+  </div>
+</main>
+
+<div class="alert-toast hidden" id="alert-toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="../js/config.js"></script>
+<script src="../js/map.js"></script>
+<script src="../js/websocket.js"></script>
+</body>
+</html>

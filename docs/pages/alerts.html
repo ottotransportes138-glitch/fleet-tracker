@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fleet Tracker — Alertas</title>
+<link rel="stylesheet" href="../css/main.css"/>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="logo">🚛 Fleet Tracker</div>
+  <nav class="nav-links">
+    <a href="index.html">Mapa ao vivo</a>
+    <a href="routes.html">Rotas</a>
+    <a href="vehicles.html">Veículos</a>
+    <a href="alerts.html" class="active">Alertas</a>
+    <a href="reports.html">Relatórios</a>
+  </nav>
+</nav>
+
+<div class="page">
+  <div class="page-title" style="display:flex;align-items:center;justify-content:space-between">
+    Alertas
+    <div style="display:flex;gap:8px;align-items:center">
+      <select class="form-input" id="filter-type" style="width:160px" onchange="loadAlerts()">
+        <option value="">Todos os tipos</option>
+        <option value="speed">Velocidade</option>
+        <option value="deviation">Desvio de rota</option>
+        <option value="offline">Offline</option>
+      </select>
+      <select class="form-input" id="filter-ack" style="width:160px" onchange="loadAlerts()">
+        <option value="false">Não reconhecidos</option>
+        <option value="">Todos</option>
+        <option value="true">Reconhecidos</option>
+      </select>
+      <button class="btn btn-ghost" onclick="ackAll()">Reconhecer todos</button>
+    </div>
+  </div>
+
+  <div class="card" style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr>
+          <th>Hora</th>
+          <th>Tipo</th>
+          <th>Veículo</th>
+          <th>Mensagem</th>
+          <th>Velocidade</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="alerts-table"><tr><td colspan="6" class="muted" style="padding:20px">Carregando...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="../js/config.js"></script>
+<script>
+const TYPE_LABEL = { speed: 'Velocidade', deviation: 'Desvio de rota', offline: 'Offline' };
+const TYPE_TAG   = { speed: 'tag-warn',   deviation: 'tag-danger',     offline: 'tag-danger' };
+
+async function loadAlerts() {
+  const type = document.getElementById('filter-type').value;
+  const ack  = document.getElementById('filter-ack').value;
+
+  let url = `${CONFIG.API_URL}/api/alerts?limit=100`;
+  if (ack !== '') url += `&acknowledged=${ack}`;
+
+  const res    = await fetch(url);
+  let alerts   = await res.json();
+  if (type) alerts = alerts.filter(a => a.type === type);
+
+  const tbody  = document.getElementById('alerts-table');
+  tbody.innerHTML = alerts.map(a => `
+    <tr style="${!a.acknowledged ? 'background:rgba(239,68,68,.04)' : ''}">
+      <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;white-space:nowrap">
+        ${new Date(a.created_at).toLocaleString('pt-BR')}
+      </td>
+      <td><span class="tag ${TYPE_TAG[a.type]}">${TYPE_LABEL[a.type]}</span></td>
+      <td style="font-family:'IBM Plex Mono',monospace;font-weight:500">${a.plate}<br>
+        <span style="font-size:11px;color:var(--text-muted);font-family:'IBM Plex Sans',sans-serif">${a.name}</span>
+      </td>
+      <td style="font-size:12px">${a.message}</td>
+      <td style="font-family:'IBM Plex Mono',monospace;font-size:12px">${a.speed ? a.speed+' km/h' : '—'}</td>
+      <td>
+        ${!a.acknowledged
+          ? `<button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="acknowledge('${a.id}')">Reconhecer</button>`
+          : `<span class="muted" style="font-size:11px">✓</span>`}
+      </td>
+    </tr>
+  `).join('') || `<tr><td colspan="6" class="muted" style="padding:20px">Nenhum alerta encontrado</td></tr>`;
+}
+
+async function acknowledge(id) {
+  await fetch(`${CONFIG.API_URL}/api/alerts/${id}/acknowledge`, { method: 'PATCH' });
+  loadAlerts();
+}
+
+async function ackAll() {
+  const res    = await fetch(`${CONFIG.API_URL}/api/alerts?acknowledged=false&limit=200`);
+  const alerts = await res.json();
+  await Promise.all(alerts.map(a =>
+    fetch(`${CONFIG.API_URL}/api/alerts/${a.id}/acknowledge`, { method: 'PATCH' })
+  ));
+  loadAlerts();
+}
+
+loadAlerts();
+// Atualiza a cada 30s
+setInterval(loadAlerts, 30_000);
+</script>
+</body>
+</html>
