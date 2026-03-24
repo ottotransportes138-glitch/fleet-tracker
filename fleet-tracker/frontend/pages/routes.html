@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fleet Tracker — Rotas</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="../css/main.css"/>
+<style>
+  .routes-layout { display: flex; flex: 1; overflow: hidden; }
+  .routes-panel  { width: 320px; flex-shrink: 0; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+  .routes-list   { flex: 1; overflow-y: auto; padding: 12px; }
+  .route-card    { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 8px; cursor: pointer; transition: border-color .15s; }
+  .route-card:hover, .route-card.selected { border-color: var(--accent); }
+  .route-card-name  { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+  .route-card-meta  { font-size: 11px; color: var(--text-muted); }
+  .route-actions    { display: flex; gap: 6px; margin-top: 8px; }
+  #route-map        { flex: 1; }
+  .form-panel       { padding: 16px; border-top: 1px solid var(--border); }
+  .form-panel h3    { font-size: 13px; font-weight: 500; margin-bottom: 12px; font-family: 'IBM Plex Mono', monospace; }
+  .hint             { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .waypoints-count  { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent); }
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="logo">🚛 Fleet Tracker</div>
+  <nav class="nav-links">
+    <a href="index.html">Mapa ao vivo</a>
+    <a href="routes.html" class="active">Rotas</a>
+    <a href="vehicles.html">Veículos</a>
+    <a href="alerts.html">Alertas</a>
+    <a href="reports.html">Relatórios</a>
+  </nav>
+</nav>
+
+<div class="routes-layout">
+  <!-- Painel esquerdo: lista + formulário -->
+  <div class="routes-panel">
+    <div class="routes-list" id="routes-list">
+      <p class="muted">Carregando rotas...</p>
+    </div>
+
+    <div class="form-panel">
+      <h3 id="form-title">Nova rota</h3>
+      <div class="form-group">
+        <label class="form-label">Nome da rota</label>
+        <input class="form-input" id="route-name" placeholder="Ex: SP → Campinas">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tolerância de desvio (metros)</label>
+        <input class="form-input" id="route-tolerance" type="number" value="500" min="100" max="5000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Pontos da rota</label>
+        <p class="hint">Clique no mapa para adicionar pontos da rota</p>
+        <p class="waypoints-count" id="wp-count">0 pontos adicionados</p>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="clearWaypoints()">Limpar</button>
+        <button class="btn btn-primary" onclick="saveRoute()">Salvar rota</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mapa -->
+  <div id="route-map"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="../js/config.js"></script>
+<script>
+const map = L.map('route-map').setView([-15.77, -47.92], 5);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(map);
+
+let waypoints = [];
+let waypointMarkers = [];
+let routeLine = null;
+let editingId = null;
+let routePolylines = {};
+
+// ── Clique no mapa adiciona waypoint ────────────────────────
+map.on('click', (e) => {
+  waypoints.push({ lat: e.latlng.lat, lng: e.latlng.lng });
+  const m = L.circleMarker([e.latlng.lat, e.latlng.lng], {
+    radius: 6, color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 1, weight: 2
+  }).addTo(map).bindTooltip(`Ponto ${waypoints.length}`);
+  waypointMarkers.push(m);
+  updateRouteLine();
+  document.getElementById('wp-count').textContent = `${waypoints.length} pontos adicionados`;
+});
+
+function updateRouteLine() {
+  if (routeLine) map.removeLayer(routeLine);
+  if (waypoints.length < 2) return;
+  routeLine = L.polyline(waypoints.map(w => [w.lat, w.lng]), {
+    color: '#3b82f6', weight: 2, dashArray: '6 4'
+  }).addTo(map);
+}
+
+function clearWaypoints() {
+  waypoints = [];
+  waypointMarkers.forEach(m => map.removeLayer(m));
+  waypointMarkers = [];
+  if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+  document.getElementById('wp-count').textContent = '0 pontos adicionados';
+  document.getElementById('route-name').value = '';
+  document.getElementById('route-tolerance').value = 500;
+  document.getElementById('form-title').textContent = 'Nova rota';
+  editingId = null;
+}
+
+async function saveRoute() {
+  const name = document.getElementById('route-name').value.trim();
+  if (!name)           { alert('Informe o nome da rota'); return; }
+  if (waypoints.length < 2) { alert('Adicione pelo menos 2 pontos no mapa'); return; }
+
+  const body = {
+    name,
+    waypoints,
+    tolerance_m: parseInt(document.getElementById('route-tolerance').value),
+  };
+
+  const url    = editingId ? `${CONFIG.API_URL}/api/routes/${editingId}` : `${CONFIG.API_URL}/api/routes`;
+  const method = editingId ? 'PUT' : 'POST';
+
+  await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  clearWaypoints();
+  loadRoutes();
+}
+
+async function loadRoutes() {
+  const res   = await fetch(`${CONFIG.API_URL}/api/routes`);
+  const routes = await res.json();
+  const el    = document.getElementById('routes-list');
+
+  // Limpa linhas anteriores
+  Object.values(routePolylines).forEach(l => map.removeLayer(l));
+  routePolylines = {};
+
+  el.innerHTML = routes.map(r => `
+    <div class="route-card" id="rc-${r.id}" onclick="selectRoute('${r.id}')">
+      <div class="route-card-name">${r.name}</div>
+      <div class="route-card-meta">${r.waypoints.length} pontos · tolerância ${r.tolerance_m}m</div>
+      <div class="route-actions">
+        <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="event.stopPropagation();editRoute(${JSON.stringify(r).replace(/"/g,'&quot;')})">Editar</button>
+        <button class="btn btn-danger"  style="font-size:11px;padding:4px 10px" onclick="event.stopPropagation();deleteRoute('${r.id}')">Excluir</button>
+      </div>
+    </div>
+  `).join('') || '<p class="muted">Nenhuma rota cadastrada</p>';
+
+  // Desenha rotas no mapa
+  routes.forEach(r => {
+    if (r.waypoints.length >= 2) {
+      routePolylines[r.id] = L.polyline(r.waypoints.map(w => [w.lat, w.lng]), {
+        color: '#3b82f688', weight: 2
+      }).addTo(map).bindTooltip(r.name);
+    }
+  });
+}
+
+function selectRoute(id) {
+  document.querySelectorAll('.route-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById(`rc-${id}`)?.classList.add('selected');
+  if (routePolylines[id]) map.fitBounds(routePolylines[id].getBounds(), { padding: [40, 40] });
+}
+
+function editRoute(r) {
+  clearWaypoints();
+  editingId = r.id;
+  document.getElementById('route-name').value = r.name;
+  document.getElementById('route-tolerance').value = r.tolerance_m;
+  document.getElementById('form-title').textContent = 'Editar rota';
+  waypoints = r.waypoints;
+  waypoints.forEach((w, i) => {
+    const m = L.circleMarker([w.lat, w.lng], { radius: 6, color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: 1, weight: 2 }).addTo(map).bindTooltip(`Ponto ${i+1}`);
+    waypointMarkers.push(m);
+  });
+  updateRouteLine();
+  document.getElementById('wp-count').textContent = `${waypoints.length} pontos adicionados`;
+  if (routeLine) map.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
+}
+
+async function deleteRoute(id) {
+  if (!confirm('Excluir esta rota?')) return;
+  await fetch(`${CONFIG.API_URL}/api/routes/${id}`, { method: 'DELETE' });
+  loadRoutes();
+}
+
+loadRoutes();
+</script>
+</body>
+</html>

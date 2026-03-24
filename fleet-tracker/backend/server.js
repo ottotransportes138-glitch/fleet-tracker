@@ -1,0 +1,67 @@
+require('dotenv').config({ path: './config/.env' });
+const express = require('express');
+const cors = require('cors');
+const { WebSocketServer } = require('ws');
+const http = require('http');
+const cron = require('node-cron');
+
+const vehiclesRouter = require('./src/routes/vehicles');
+const routesRouter   = require('./src/routes/routes');
+const alertsRouter   = require('./src/routes/alerts');
+const positionsRouter = require('./src/routes/positions');
+const { syncOmnilink }  = require('./src/services/omnilink');
+const { checkAlerts }   = require('./src/services/alerts');
+const { broadcast, setWss } = require('./src/services/websocket');
+
+const app    = express();
+const server = http.createServer(app);
+const wss    = new WebSocketServer({ server });
+
+setWss(wss);
+
+// ── Middlewares ──────────────────────────────────────────────
+app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
+app.use(express.json());
+
+// ── Rotas da API ─────────────────────────────────────────────
+app.use('/api/vehicles',  vehiclesRouter);
+app.use('/api/routes',    routesRouter);
+app.use('/api/alerts',    alertsRouter);
+app.use('/api/positions', positionsRouter);
+
+app.get('/health', (_, res) => res.json({ status: 'ok', ts: new Date() }));
+
+// ── WebSocket: envia ping a cada 30s para manter conexão ─────
+wss.on('connection', (ws) => {
+  console.log('[WS] Cliente conectado');
+  ws.isAlive = true;
+  ws.on('pong', () => { ws.isAlive = true; });
+  ws.on('close', () => console.log('[WS] Cliente desconectado'));
+});
+
+setInterval(() => {
+  wss.clients.forEach((ws) => {
+    if (!ws.isAlive) return ws.terminate();
+    ws.isAlive = false;
+    ws.ping();
+  });
+}, 30_000);
+
+// ── Cron: consulta Omnilink a cada 15 segundos ───────────────
+cron.schedule('*/15 * * * * *', async () => {
+  try {
+    const positions = await syncOmnilink();
+    const alerts    = await checkAlerts(positions);
+
+    broadcast({ type: 'positions', data: positions });
+    if (alerts.length > 0) broadcast({ type: 'alerts', data: alerts });
+  } catch (err) {
+    console.error('[CRON] Erro ao sincronizar:', err.message);
+  }
+});
+
+// ── Start ────────────────────────────────────────────────────
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`🚛 Fleet Tracker rodando na porta ${PORT}`);
+});
