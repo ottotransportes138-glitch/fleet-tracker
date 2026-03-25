@@ -1,4 +1,4 @@
-const axios = require("axios");
+﻿const axios = require("axios");
 const crypto = require("crypto");
 const db = require("../models/db");
 
@@ -10,12 +10,16 @@ async function syncOmnilink() {
   const { rows: vehicles } = await db.query(
     "SELECT id, plate, name, omnilink_id, speed_limit FROM vehicles WHERE active = TRUE"
   );
+
+  console.log("[OMNILINK] Veiculos encontrados:", vehicles.length);
   if (vehicles.length === 0) return [];
 
   const positions = [];
 
   for (const vehicle of vehicles) {
     try {
+      console.log("[OMNILINK] Buscando posicao:", vehicle.omnilink_id);
+
       const soap = `<?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:web="http://microsoft.com/webservices/">
   <soap:Body>
@@ -35,13 +39,20 @@ async function syncOmnilink() {
         timeout: 15000,
       });
 
+      console.log("[OMNILINK] Resposta:", data.substring(0, 500));
+
       const lat = parseFloat(data.match(/<Latitude>(.*?)<\/Latitude>/)?.[1] || "0");
       const lng = parseFloat(data.match(/<Longitude>(.*?)<\/Longitude>/)?.[1] || "0");
       const speed = parseInt(data.match(/<VEL>(.*?)<\/VEL>/)?.[1] || "0");
       const heading = parseInt(data.match(/<DIR>(.*?)<\/DIR>/)?.[1] || "0");
       const recordedAt = data.match(/<DATA>(.*?)<\/DATA>/)?.[1] || new Date().toISOString();
 
-      if (lat === 0 && lng === 0) continue;
+      console.log("[OMNILINK] Lat:", lat, "Lng:", lng, "Speed:", speed);
+
+      if (lat === 0 && lng === 0) {
+        console.log("[OMNILINK] Posicao zerada, ignorando");
+        continue;
+      }
 
       await db.query(
         "INSERT INTO positions (vehicle_id, lat, lng, speed, heading, recorded_at) VALUES ($1, $2, $3, $4, $5, $6)",
@@ -57,9 +68,11 @@ async function syncOmnilink() {
         recordedAt,
       });
 
+      console.log("[OMNILINK] Posicao salva:", vehicle.plate, lat, lng);
+
     } catch (err) {
-      console.error("[OMNILINK] Erro " + vehicle.plate + ":", err.message);
-      console.error("[OMNILINK] Resposta:", err.response?.data?.substring(0, 300));
+      console.error("[OMNILINK] Erro " + vehicle.omnilink_id + ":", err.message);
+      console.error("[OMNILINK] Resposta:", err.response?.data?.substring(0, 500));
     }
   }
 
