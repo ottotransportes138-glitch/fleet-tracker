@@ -1,58 +1,66 @@
-const axios = require('axios');
-const db = require('../models/db');
+﻿const axios = require("axios");
+const crypto = require("crypto");
+const db = require("../models/db");
 
-const BASE_URL = process.env.OMNILINK_API_URL;
-const TOKEN    = process.env.OMNILINK_TOKEN;
+const WSTT_URL = "http://wstt.omnilink.com.br/iasws/iasws.asmx";
+const USER = process.env.OMNILINK_USER;
+const PASS = crypto.createHash("md5").update(process.env.OMNILINK_PASSWORD || "").digest("hex");
 
-const client = axios.create({
-  baseURL: BASE_URL,
-  headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
-  timeout: 10_000,
-});
-
-/**
- * Busca posições atuais de todos os veículos na Omnilink
- * e salva no banco de dados.
- * Retorna array de posições enriquecidas com dados do veículo.
- */
 async function syncOmnilink() {
-  // 1. Busca veículos ativos no banco
   const { rows: vehicles } = await db.query(
-    `SELECT id, plate, name, omnilink_id, speed_limit FROM vehicles WHERE active = TRUE`
+    "SELECT id, plate, name, omnilink_id, speed_limit FROM vehicles WHERE active = TRUE"
   );
-
   if (vehicles.length === 0) return [];
 
-  // 2. Busca posições na API Omnilink
-  // Adapte o endpoint conforme documentação da sua conta Omnilink
-  const ids = vehicles.map(v => v.omnilink_id).join(',');
-  const { data } = await client.get('/positions/current', { params: { ids } });
-
-  // 3. Mapeia e salva no banco
   const positions = [];
 
-  for (const item of data) {
-    const vehicle = vehicles.find(v => v.omnilink_id === String(item.deviceId));
-    if (!vehicle) continue;
+  for (const vehicle of vehicles) {
+    try {
+      const soap = `<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:web="http://microsoft.com/webservices/">
+  <soap:Body>
+    <web:ObtemPosicaoAtual>
+      <web:Usuario>${USER}</web:Usuario>
+      <web:Senha>${PASS}</web:Senha>
+      <web:Serial>${vehicle.omnilink_id}</web:Serial>
+    </web:ObtemPosicaoAtual>
+  </soap:Body>
+</soap:Envelope>`;
 
-    // Salva posição
-    await db.query(
-      `INSERT INTO positions (vehicle_id, lat, lng, speed, heading, recorded_at)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [vehicle.id, item.latitude, item.longitude, item.speed, item.course, new Date(item.eventTime)]
-    );
+      const { data } = await axios.post(WSTT_URL, soap, {
+        headers: {
+          "Content-Type": "text/xml; charset=utf-8",
+          "SOAPAction": "http://microsoft.com/webservices/ObtemPosicaoAtual"
+        },
+        timeout: 15000,
+      });
 
-    positions.push({
-      vehicleId:   vehicle.id,
-      plate:       vehicle.plate,
-      name:        vehicle.name,
-      speedLimit:  vehicle.speed_limit,
-      lat:         item.latitude,
-      lng:         item.longitude,
-      speed:       item.speed,
-      heading:     item.course,
-      recordedAt:  item.eventTime,
-    });
+      const lat = parseFloat(data.match(/<Latitude>(.*?)<\/Latitude>/)?.[1] || "0");
+      const lng = parseFloat(data.match(/<Longitude>(.*?)<\/Longitude>/)?.[1] || "0");
+      const speed = parseInt(data.match(/<VEL>(.*?)<\/VEL>/)?.[1] || "0");
+      const heading = parseInt(data.match(/<DIR>(.*?)<\/DIR>/)?.[1] || "0");
+      const recordedAt = data.match(/<DATA>(.*?)<\/DATA>/)?.[1] || new Date().toISOString();
+
+      if (lat === 0 && lng === 0) continue;
+
+      await db.query(
+        "INSERT INTO positions (vehicle_id, lat, lng, speed, heading, recorded_at) VALUES ($1, $2, $3, $4, $5, $6)",
+        [vehicle.id, lat, lng, speed, heading, new Date(recordedAt)]
+      );
+
+      positions.push({
+        vehicleId: vehicle.id,
+        plate: vehicle.plate,
+        name: vehicle.name,
+        speedLimit: vehicle.speed_limit,
+        lat, lng, speed, heading,
+        recordedAt,
+      });
+
+    } catch (err) {
+      console.error("[OMNILINK] Erro " + vehicle.plate + ":", err.message);
+      console.error("[OMNILINK] Resposta:", err.response?.data?.substring(0, 300));
+    }
   }
 
   return positions;
