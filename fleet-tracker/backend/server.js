@@ -7,8 +7,8 @@ const cron = require('node-cron');
 
 const vehiclesRouter = require('./src/routes/vehicles');
 const routesRouter   = require('./src/routes/routes');
-const alertsRouter   = require('./src/routes/alerts');
-const positionsRouter = require('./src/routes/positions');
+const { alertsRouter }  = require('./src/routes/routes');
+const { positionsRouter } = require('./src/routes/routes');
 const { syncOmnilink }  = require('./src/services/omnilink');
 const { checkAlerts }   = require('./src/services/alerts');
 const { broadcast, setWss } = require('./src/services/websocket');
