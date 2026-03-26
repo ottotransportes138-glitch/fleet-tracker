@@ -33,7 +33,7 @@ async function syncOmnilink() {
       const { data } = await axios.post(WSTT_URL, soap, {
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
-          "SOAPAction": ""
+          "SOAPAction": "http://microsoft.com/webservices/ObtemPosicaoAtual"
         },
         timeout: 15000,
       });
@@ -65,3 +65,4 @@ async function syncOmnilink() {
 }
 
 module.exports = { syncOmnilink };
+
