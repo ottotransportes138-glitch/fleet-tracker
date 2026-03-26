@@ -13,37 +13,38 @@ async function syncOmnilink() {
   if (vehicles.length === 0) return [];
 
   const positions = [];
+  const now = new Date();
+  const dataFim = now.toISOString().slice(0,19);
+  const dataInicio = new Date(now - 30*60000).toISOString().slice(0,19);
 
-  for (const vehicle of vehicles) {
-    try {
-      const soap = `<?xml version="1.0" encoding="utf-8"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-  <soap:Body>
-    <ObtemEventosCtrl xmlns="http://microsoft.com/webservices/">
-      <Usuario>${USER}</Usuario>
-      <Senha>${PASS}</Senha>
-      <idUltimoPost>0</idUltimoPost>
-      <Serial>${vehicle.omnilink_id}</Serial>
-    </ObtemEventosCtrl>
-  </soap:Body>
-</soap:Envelope>`;
+  try {
+    const soap = `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:wst="http://wstt">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <wst:obtemEventosCtrl>
+         <usuario>${USER}</usuario>
+         <senha>${PASS}</senha>
+         <dataInicio>${dataInicio}</dataInicio>
+         <dataFim>${dataFim}</dataFim>
+      </wst:obtemEventosCtrl>
+   </soapenv:Body>
+</soapenv:Envelope>`;
 
-      console.log("[OMNILINK] Chamando ObtemEventosCtrl para:", vehicle.omnilink_id);
+    console.log("[OMNILINK] Enviando:", soap.substring(0, 400));
 
-      const { data } = await axios.post(WSTT_URL, soap, {
-        headers: {
-          "Content-Type": "text/xml; charset=utf-8",
-          "SOAPAction": ""
-        },
-        timeout: 15000,
-      });
+    const { data } = await axios.post(WSTT_URL, soap, {
+      headers: {
+        "Content-Type": "text/xml; charset=utf-8",
+        "SOAPAction": "http://wstt/obtemEventosCtrl"
+      },
+      timeout: 15000,
+    });
 
-      console.log("[OMNILINK] Resposta:", data.substring(0, 800));
+    console.log("[OMNILINK] Resposta:", data.substring(0, 1000));
 
-    } catch (err) {
-      console.error("[OMNILINK] Erro:", err.message);
-      console.error("[OMNILINK] Resposta erro:", err.response?.data?.substring(0, 500));
-    }
+  } catch (err) {
+    console.error("[OMNILINK] Erro:", err.message);
+    console.error("[OMNILINK] Resposta erro:", err.response?.data?.substring(0, 500));
   }
 
   return positions;
