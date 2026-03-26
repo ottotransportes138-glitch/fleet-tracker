@@ -1,10 +1,10 @@
-﻿const axios = require("axios");
+const axios = require("axios");
 const crypto = require("crypto");
 const db = require("../models/db");
 
 const WSTT_URL = "https://wstt.omnilink.com.br/iasws/iasws.asmx";
 const USER = process.env.OMNILINK_USER;
-const PASS = crypto.createHash("md5").update(process.env.OMNILINK_PASSWORD || "").digest("hex");
+const PASS = process.env.OMNILINK_PASSWORD;
 
 async function syncOmnilink() {
   const { rows: vehicles } = await db.query(
