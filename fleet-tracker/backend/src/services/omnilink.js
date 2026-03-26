@@ -18,7 +18,7 @@ async function syncOmnilink() {
   const dataInicio = new Date(now - 30*60000).toISOString().slice(0,19);
 
   try {
-    const soap = `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:wst="http://wstt">
+    const soap = `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:wst="http://microsoft.com/webservices/">
    <soapenv:Header/>
    <soapenv:Body>
       <wst:obtemEventosCtrl>
@@ -51,3 +51,4 @@ async function syncOmnilink() {
 }
 
 module.exports = { syncOmnilink };
+
