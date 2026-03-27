@@ -27,8 +27,10 @@ async function buscarUltimoId() {
 
   const decoded = decodeHtml(data);
   const idctrl = decoded.match(/<idctrl>\s*(.*?)\s*<\/idctrl>/)?.[1]?.trim() || "0";
-  console.log("[OMNILINK] idctrl obtido:", idctrl);
-  return idctrl;
+  // Volta 10000 IDs para pegar eventos recentes
+  const idAnterior = (BigInt(idctrl) - BigInt(10000)).toString();
+  console.log("[OMNILINK] idctrl atual:", idctrl, "buscando desde:", idAnterior);
+  return idAnterior;
 }
 
 async function syncOmnilink() {
@@ -60,11 +62,10 @@ async function syncOmnilink() {
     });
 
     const decoded = decodeHtml(data);
-    console.log("[OMNILINK] ObtemEventosCtrl resposta:", decoded.substring(0, 1000));
+    console.log("[OMNILINK] Eventos recebidos:", decoded.substring(0, 2000));
 
   } catch (err) {
     console.error("[OMNILINK] Erro:", err.message);
-    console.error("[OMNILINK] Resposta erro:", err.response?.data?.substring(0, 500));
   }
 
   return positions;
