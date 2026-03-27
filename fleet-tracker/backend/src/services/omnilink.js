@@ -5,6 +5,10 @@ const WSTT_URL = "https://wstt.omnilink.com.br/iasws/iasws.asmx";
 const USER = process.env.OMNILINK_USER;
 const PASS = process.env.OMNILINK_PASSWORD;
 
+function decodeHtml(str) {
+  return str.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+}
+
 async function buscarUltimoId() {
   const soap = `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:web="http://microsoft.com/webservices/">
    <soapenv:Header/>
@@ -17,16 +21,13 @@ async function buscarUltimoId() {
 </soapenv:Envelope>`;
 
   const { data } = await axios.post(WSTT_URL, soap, {
-    headers: {
-      "Content-Type": "text/xml; charset=utf-8",
-      "SOAPAction": "http://microsoft.com/webservices/BuscarUltimoIdPost"
-    },
+    headers: { "Content-Type": "text/xml; charset=utf-8", "SOAPAction": "http://microsoft.com/webservices/BuscarUltimoIdPost" },
     timeout: 15000,
   });
 
-  console.log("[OMNILINK] BuscarUltimoIdPost resposta:", data.substring(0, 500));
-  const idctrl = data.match(/<idctrl>\s*(.*?)\s*<\/idctrl>/)?.[1]?.trim() || "0";
-  console.log("[OMNILINK] idctrl:", idctrl);
+  const decoded = decodeHtml(data);
+  const idctrl = decoded.match(/<idctrl>\s*(.*?)\s*<\/idctrl>/)?.[1]?.trim() || "0";
+  console.log("[OMNILINK] idctrl obtido:", idctrl);
   return idctrl;
 }
 
@@ -54,14 +55,12 @@ async function syncOmnilink() {
 </soapenv:Envelope>`;
 
     const { data } = await axios.post(WSTT_URL, soap, {
-      headers: {
-        "Content-Type": "text/xml; charset=utf-8",
-        "SOAPAction": "http://microsoft.com/webservices/ObtemEventosCtrl"
-      },
+      headers: { "Content-Type": "text/xml; charset=utf-8", "SOAPAction": "http://microsoft.com/webservices/ObtemEventosCtrl" },
       timeout: 15000,
     });
 
-    console.log("[OMNILINK] ObtemEventosCtrl resposta:", data.substring(0, 1000));
+    const decoded = decodeHtml(data);
+    console.log("[OMNILINK] ObtemEventosCtrl resposta:", decoded.substring(0, 1000));
 
   } catch (err) {
     console.error("[OMNILINK] Erro:", err.message);
@@ -72,4 +71,3 @@ async function syncOmnilink() {
 }
 
 module.exports = { syncOmnilink };
-
