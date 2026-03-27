@@ -21,12 +21,12 @@ async function syncOmnilink() {
     const soap = `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:wst="http://microsoft.com/webservices/">
    <soapenv:Header/>
    <soapenv:Body>
-      <wst:obtemEventosCtrl>
+      <wst:ObtemEventosCtrl>
          <usuario>${USER}</usuario>
          <senha>${PASS}</senha>
          <dataInicio>${dataInicio}</dataInicio>
          <dataFim>${dataFim}</dataFim>
-      </wst:obtemEventosCtrl>
+      </wst:ObtemEventosCtrl>
    </soapenv:Body>
 </soapenv:Envelope>`;
 
@@ -51,4 +51,5 @@ async function syncOmnilink() {
 }
 
 module.exports = { syncOmnilink };
+
 
