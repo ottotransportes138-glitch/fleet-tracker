@@ -12,11 +12,11 @@ function decodeHtml(str) {
 function converterCoordenada(coord) {
   if (!coord) return null;
   const partes = coord.split("_");
-  if (partes.length < 4) return null;
+  if (partes.length < 5) return null;
   const graus = parseFloat(partes[0]);
   const min = parseFloat(partes[1]);
-  const seg = parseFloat(partes[2]);
-  const dir = partes[3];
+  const seg = parseFloat(partes[2] + "." + partes[3]);
+  const dir = partes[4];
   let decimal = graus + min / 60 + seg / 3600;
   if (dir === "S" || dir === "W") decimal = -decimal;
   return decimal;
@@ -117,3 +117,4 @@ async function syncOmnilink() {
 }
 
 module.exports = { syncOmnilink };
+
