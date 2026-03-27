@@ -13,9 +13,6 @@ async function syncOmnilink() {
   if (vehicles.length === 0) return [];
 
   const positions = [];
-  const now = new Date();
-  const dataFim = now.toISOString().slice(0,19);
-  const dataInicio = new Date(now - 30*60000).toISOString().slice(0,19);
 
   try {
     const soap = `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:wst="http://microsoft.com/webservices/">
@@ -25,13 +22,11 @@ async function syncOmnilink() {
          <Usuario>${USER}</Usuario>
          <Senha>${PASS}</Senha>
          <UltimoSequencialCtrl>0</UltimoSequencialCtrl>
-         <dataInicio>${dataInicio}</dataInicio>
-         <dataFim>${dataFim}</dataFim>
       </wst:ObtemEventosCtrl>
    </soapenv:Body>
 </soapenv:Envelope>`;
 
-    console.log("[OMNILINK] Enviando:", soap.substring(0, 500));
+    console.log("[OMNILINK] Enviando ObtemEventosCtrl...");
 
     const { data } = await axios.post(WSTT_URL, soap, {
       headers: {
