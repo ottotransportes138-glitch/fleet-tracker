@@ -50,7 +50,7 @@ async function buscarUltimoId() {
 
   const decoded = decodeHtml(data);
   const idctrl = decoded.match(/<idctrl>\s*(.*?)\s*<\/idctrl>/)?.[1]?.trim() || "0";
-  const idAnterior = (BigInt(idctrl) - BigInt(10000)).toString();
+  const idAnterior = (BigInt(idctrl) - BigInt(50000)).toString();
   return idAnterior;
 }
 
@@ -118,6 +118,7 @@ async function syncOmnilink() {
 }
 
 module.exports = { syncOmnilink };
+
 
 
 
