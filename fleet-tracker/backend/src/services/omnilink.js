@@ -22,8 +22,8 @@ async function syncOmnilink() {
    <soapenv:Header/>
    <soapenv:Body>
       <wst:ObtemEventosCtrl>
-         <usuario>${USER}</usuario>
-         <senha>${PASS}</senha>
+         <Usuario>${USER}</Usuario>
+         <Senha>${PASS}</Senha>
          <dataInicio>${dataInicio}</dataInicio>
          <dataFim>${dataFim}</dataFim>
       </wst:ObtemEventosCtrl>
@@ -51,5 +51,6 @@ async function syncOmnilink() {
 }
 
 module.exports = { syncOmnilink };
+
 
 
