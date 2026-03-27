@@ -26,7 +26,7 @@ function converterData(dataHora) {
   if (!dataHora) return new Date();
   const [data, hora] = dataHora.trim().split(" ");
   const [dia, mes, ano] = data.split("/");
-  return new Date(`${ano}-${mes}-${dia}T${hora}Z`);
+  return new Date(`${ano}-${mes}-${dia}T${hora}-03:00`);
 }
 
 async function buscarUltimoId() {
@@ -125,4 +125,5 @@ async function syncOmnilink() {
 }
 
 module.exports = { syncOmnilink };
+
 
