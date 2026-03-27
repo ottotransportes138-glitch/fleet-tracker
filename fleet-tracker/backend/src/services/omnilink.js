@@ -12,20 +12,17 @@ function decodeHtml(str) {
 function converterCoordenada(coord) {
   if (!coord) return null;
   const partes = coord.trim().split("_");
-  console.log("[COORD] partes:", partes);
-  if (partes.length < 4) return null;
+  if (partes.length < 5) return null;
   const graus = parseFloat(partes[0]);
   const min = parseFloat(partes[1]);
   const seg = parseFloat(partes[2] + "." + partes[3]);
   const dir = partes[4];
   let decimal = graus + min / 60 + seg / 3600;
   if (dir === "S" || dir === "W") decimal = -decimal;
-  console.log("[COORD] resultado:", coord, "->", decimal, "(dir:", dir, ")");
   return decimal;
 }
 
 function converterData(dataHora) {
-  // Formato: "27/03/2026 01:24:13"
   if (!dataHora) return new Date();
   const [data, hora] = dataHora.trim().split(" ");
   const [dia, mes, ano] = data.split("/");
@@ -61,6 +58,7 @@ async function syncOmnilink() {
   if (vehicles.length === 0) return [];
 
   const positions = [];
+  const ultimasPosicoesMap = {};
 
   try {
     const ultimoId = await buscarUltimoId();
@@ -84,30 +82,39 @@ async function syncOmnilink() {
     const decoded = decodeHtml(data);
     const eventos = [...decoded.matchAll(/<IdTerminal>(.*?)<\/IdTerminal>[\s\S]*?<Velocidade>(.*?)<\/Velocidade>[\s\S]*?<Latitude>(.*?)<\/Latitude>[\s\S]*?<Longitude>(.*?)<\/Longitude>[\s\S]*?<DataHoraEvento>(.*?)<\/DataHoraEvento>/g)];
 
+    // Pega apenas o evento mais recente de cada terminal
     for (const evento of eventos) {
       const idTerminal = evento[1].trim();
-      const speed = parseInt(evento[2].trim()) || 0;
-      const latStr = evento[3].trim();
-      const lngStr = evento[4].trim();
-      const dataHora = evento[5].trim();
-
-      const lat = converterCoordenada(latStr);
-      const lng = converterCoordenada(lngStr);
-
-      if (!lat || !lng) continue;
-
       const vehicle = vehicles.find(v => v.omnilink_id && v.omnilink_id.toUpperCase() === idTerminal.toUpperCase());
-      if (!vehicle) { console.log("[OMNILINK] Terminal ignorado:", idTerminal); continue; }
+      if (!vehicle) continue;
 
-      const recordedAt = converterData(dataHora);
+      const recordedAt = converterData(evento[5].trim());
+      const existing = ultimasPosicoesMap[vehicle.id];
+      if (!existing || recordedAt > existing.recordedAt) {
+        ultimasPosicoesMap[vehicle.id] = {
+          vehicle,
+          speed: parseInt(evento[2].trim()) || 0,
+          latStr: evento[3].trim(),
+          lngStr: evento[4].trim(),
+          recordedAt,
+          dataHora: evento[5].trim()
+        };
+      }
+    }
+
+    // Salva apenas a posição mais recente de cada veículo
+    for (const item of Object.values(ultimasPosicoesMap)) {
+      const lat = converterCoordenada(item.latStr);
+      const lng = converterCoordenada(item.lngStr);
+      if (!lat || !lng) continue;
 
       await db.query(
         "INSERT INTO positions (vehicle_id, lat, lng, speed, heading, recorded_at) VALUES ($1, $2, $3, $4, $5, $6)",
-        [vehicle.id, lat, lng, speed, 0, recordedAt]
+        [item.vehicle.id, lat, lng, item.speed, 0, item.recordedAt]
       );
 
-      positions.push({ vehicleId: vehicle.id, plate: vehicle.plate, lat, lng, speed });
-      console.log("[OMNILINK] Posicao salva:", vehicle.plate, lat, lng, speed, dataHora);
+      positions.push({ vehicleId: item.vehicle.id, plate: item.vehicle.plate, lat, lng, speed: item.speed });
+      console.log("[OMNILINK] Posicao salva:", item.vehicle.plate, lat, lng, item.speed, item.dataHora);
     }
 
   } catch (err) {
@@ -118,8 +125,3 @@ async function syncOmnilink() {
 }
 
 module.exports = { syncOmnilink };
-
-
-
-
-
