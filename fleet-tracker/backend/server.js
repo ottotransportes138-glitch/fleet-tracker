@@ -27,3 +27,4 @@ setInterval(() => { wss.clients.forEach((ws) => { if (!ws.isAlive) return ws.ter
 cron.schedule("*/15 * * * * *", async () => { try { const positions = await syncOmnilink(); const alerts = await checkAlerts(positions); broadcast({ type: "positions", data: positions }); if (alerts.length > 0) broadcast({ type: "alerts", data: alerts }); } catch (err) { console.error("[CRON] Erro:", err.message); } });
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => { console.log("Fleet Tracker rodando na porta " + PORT); });
+
