@@ -25,7 +25,7 @@ async function buscarUltimoId() {
   });
 
   console.log("[OMNILINK] BuscarUltimoIdPost resposta:", data.substring(0, 500));
-  const idctrl = data.match(/<idctrl>(.*?)<\/idctrl>/)?.[1] || "0";
+  const idctrl = data.match(/<idctrl>\s*(.*?)\s*<\/idctrl>/)?.[1]?.trim() || "0";
   console.log("[OMNILINK] idctrl:", idctrl);
   return idctrl;
 }
@@ -72,3 +72,4 @@ async function syncOmnilink() {
 }
 
 module.exports = { syncOmnilink };
+
