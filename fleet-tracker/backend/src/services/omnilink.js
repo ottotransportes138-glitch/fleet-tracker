@@ -24,18 +24,19 @@ async function syncOmnilink() {
       <wst:ObtemEventosCtrl>
          <Usuario>${USER}</Usuario>
          <Senha>${PASS}</Senha>
-         <UltimoSequencialCtrl>0</UltimoSequencialCtrl><dataInicio>${dataInicio}</dataInicio>
+         <UltimoSequencialCtrl>0</UltimoSequencialCtrl>
+         <dataInicio>${dataInicio}</dataInicio>
          <dataFim>${dataFim}</dataFim>
       </wst:ObtemEventosCtrl>
    </soapenv:Body>
 </soapenv:Envelope>`;
 
-    console.log("[OMNILINK] Enviando:", soap.substring(0, 400));
+    console.log("[OMNILINK] Enviando:", soap.substring(0, 500));
 
     const { data } = await axios.post(WSTT_URL, soap, {
       headers: {
         "Content-Type": "text/xml; charset=utf-8",
-        "SOAPAction": "http://wstt/obtemEventosCtrl"
+        "SOAPAction": "http://microsoft.com/webservices/ObtemEventosCtrl"
       },
       timeout: 15000,
     });
@@ -51,7 +52,3 @@ async function syncOmnilink() {
 }
 
 module.exports = { syncOmnilink };
-
-
-
-
