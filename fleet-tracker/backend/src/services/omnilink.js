@@ -97,7 +97,7 @@ async function syncOmnilink() {
       if (!lat || !lng) continue;
 
       const vehicle = vehicles.find(v => v.omnilink_id && v.omnilink_id.toUpperCase() === idTerminal.toUpperCase());
-      if (!vehicle) continue;
+      if (!vehicle) { console.log("[OMNILINK] Terminal ignorado:", idTerminal); continue; }
 
       const recordedAt = converterData(dataHora);
 
@@ -118,4 +118,5 @@ async function syncOmnilink() {
 }
 
 module.exports = { syncOmnilink };
+
 
