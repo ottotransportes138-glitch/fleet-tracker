@@ -117,7 +117,7 @@ async function carregarDashboard() {
   document.getElementById('table-title').textContent = `Desempenho por Veículo — ${startLabel} a ${endLabel}`;
 
   try {
-    const res = await fetch(`${CONFIG.API_URL}/api/dashboard?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
+    const res = await fetch(`${CONFIG.API_URL}/api/dashboard?start=${encodeURIComponent(start)}&end=\${encodeURIComponent\(document.getElementById\('date-end'\).value + ' 23:59:59'\)\}`);
     let dados = await res.json();
     if (!Array.isArray(dados)) dados = [];
 
@@ -221,3 +221,4 @@ carregarDashboard();
 </script>
 </body>
 </html>
+
