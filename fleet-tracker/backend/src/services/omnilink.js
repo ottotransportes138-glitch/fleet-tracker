@@ -1,7 +1,8 @@
-﻿const soap = require("soap");
+﻿const axios = require("axios");
+const crypto = require("crypto");
 const db = require("../models/db");
 
-const WSDL = "https://wstt.omnilink.com.br/iasws/iasws.asmx?wsdl";
+const WSTT_URL = "https://wstt.omnilink.com.br/iasws/iasws.asmx";
 const USER = process.env.OMNILINK_USER;
 const PASS = process.env.OMNILINK_PASSWORD;
 
@@ -13,29 +14,44 @@ async function syncOmnilink() {
   if (vehicles.length === 0) return [];
 
   const positions = [];
-  const client = await soap.createClientAsync(WSDL);
 
   for (const vehicle of vehicles) {
     try {
-      console.log("[OMNILINK] Buscando:", vehicle.plate, vehicle.omnilink_id);
+      const msgId = "urn:uuid:" + crypto.randomUUID();
+      const soap = `<?xml version="1.0" encoding="utf-8"?>
+<soap-env:Envelope xmlns:soap-env="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap-env:Header xmlns:wsa="http://www.w3.org/2005/08/addressing">
+    <wsa:Action>http://microsoft.com/webservices/IASWSSoap/ObtemPosicaoAtualRequest</wsa:Action>
+    <wsa:MessageID>${msgId}</wsa:MessageID>
+    <wsa:To>${WSTT_URL}</wsa:To>
+  </soap-env:Header>
+  <soap-env:Body>
+    <ns0:ObtemPosicaoAtual xmlns:ns0="http://microsoft.com/webservices/">
+      <Usuario>${USER}</Usuario>
+      <Senha>${PASS}</Senha>
+      <Serial>${vehicle.omnilink_id}</Serial>
+    </ns0:ObtemPosicaoAtual>
+  </soap-env:Body>
+</soap-env:Envelope>`;
 
-      const result = await client.ObtemPosicaoAtualAsync({
-        Usuario: USER,
-        Senha: PASS,
-        Serial: vehicle.omnilink_id
+      const { data } = await axios.post(WSTT_URL, soap, {
+        headers: {
+          "Content-Type": "text/xml; charset=utf-8",
+          "SOAPAction": "http://microsoft.com/webservices/IASWSSoap/ObtemPosicaoAtualRequest"
+        },
+        timeout: 15000,
       });
 
-      const xml = result[0]?.return || "";
-      console.log("[OMNILINK] Resposta:", xml.substring(0, 400));
+      const decoded = data.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+      console.log("[OMNILINK] Resposta:", decoded.substring(0, 400));
 
-      const lat = parseFloat(xml.match(/<Latitude>(.*?)<\/Latitude>/)?.[1] || "0");
-      const lng = parseFloat(xml.match(/<Longitude>(.*?)<\/Longitude>/)?.[1] || "0");
-      const speed = parseInt(xml.match(/<VEL>(.*?)<\/VEL>/)?.[1] || "0");
-      const heading = parseInt(xml.match(/<DIR>(.*?)<\/DIR>/)?.[1] || "0");
-      const recordedAt = xml.match(/<DATA>(.*?)<\/DATA>/)?.[1]?.trim() || new Date().toISOString();
+      const lat = parseFloat(decoded.match(/<Latitude>(.*?)<\/Latitude>/)?.[1] || "0");
+      const lng = parseFloat(decoded.match(/<Longitude>(.*?)<\/Longitude>/)?.[1] || "0");
+      const speed = parseInt(decoded.match(/<VEL>(.*?)<\/VEL>/)?.[1] || "0");
+      const heading = parseInt(decoded.match(/<DIR>(.*?)<\/DIR>/)?.[1] || "0");
+      const recordedAt = decoded.match(/<DATA>(.*?)<\/DATA>/)?.[1]?.trim() || new Date().toISOString();
 
       console.log("[OMNILINK]", vehicle.plate, "lat:", lat, "lng:", lng, "vel:", speed);
-
       if (!lat || !lng) continue;
 
       await db.query(
