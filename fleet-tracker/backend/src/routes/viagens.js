@@ -1,6 +1,7 @@
 ﻿const express = require("express");
 const db = require("../models/db");
 const router = express.Router();
+console.log("[VIAGENS] Rota carregada!");
 
 // Lista viagens ativas
 router.get("/", async (req, res) => {
