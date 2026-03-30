@@ -118,7 +118,8 @@ async function carregarDashboard() {
 
   try {
     const res = await fetch(`${CONFIG.API_URL}/api/dashboard?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
-    const dados = await res.json();
+    let dados = await res.json();
+    if (!Array.isArray(dados)) dados = [];
 
     let totalExcessos = 0;
     let movendo = 0;
