@@ -99,7 +99,7 @@ let sortDir = -1;
 async function carregarDashboard() {
   try {
     const now = new Date();
-    const inicioMes = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const inicioMes = new Date("2026-03-26T00:00:00").toISOString();
     const fimMes = now.toISOString();
 
     document.getElementById('mes-label').textContent =
