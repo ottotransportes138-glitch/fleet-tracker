@@ -12,15 +12,12 @@
   .panel-section { padding: 12px; border-bottom: 1px solid #333; }
   .panel-title   { font-size: 11px; font-weight: 700; color: #d4a017; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; }
   .vehicle-select { width: 100%; background: #222; border: 1px solid #444; color: #fff; padding: 8px 10px; border-radius: 4px; font-size: 13px; }
-  .vehicle-select:focus { outline: none; border-color: #d4a017; }
   .date-input { width: 100%; background: #222; border: 1px solid #444; color: #fff; padding: 8px 10px; border-radius: 4px; font-size: 13px; margin-bottom: 8px; }
-  .date-input:focus { outline: none; border-color: #d4a017; }
   .btn-gold { background: #d4a017; color: #111; border: none; padding: 8px 16px; border-radius: 4px; font-size: 13px; font-weight: 700; cursor: pointer; width: 100%; }
   .btn-gold:hover { background: #b8860b; }
   .history-list { flex: 1; overflow-y: auto; padding: 8px; }
-  .history-item { background: #1a1a1a; border: 1px solid #333; border-left: 3px solid #d4a017; border-radius: 4px; padding: 10px; margin-bottom: 6px; cursor: pointer; transition: border-color .15s; }
-  .history-item:hover { border-color: #d4a017; background: #222; }
-  .history-item.selected { background: #222; border-color: #d4a017; }
+  .history-item { background: #1a1a1a; border: 1px solid #333; border-left: 3px solid #d4a017; border-radius: 4px; padding: 10px; margin-bottom: 6px; cursor: pointer; }
+  .history-item:hover { background: #222; }
   .history-time { font-size: 12px; color: #d4a017; font-weight: 600; }
   .history-meta { font-size: 11px; color: #888; margin-top: 2px; }
   #route-map { flex: 1; }
@@ -28,6 +25,7 @@
   .stat { display: flex; flex-direction: column; align-items: center; }
   .stat-value { font-size: 16px; font-weight: 700; color: #d4a017; }
   .stat-label { font-size: 10px; color: #666; text-transform: uppercase; }
+  .msg { color: #666; font-size: 12px; padding: 8px; }
 </style>
 </head>
 <body>
@@ -52,7 +50,7 @@
       <div class="form-group">
         <label class="form-label" style="color:#888">Veículo</label>
         <select class="vehicle-select" id="vehicle-select">
-          <option value="">Selecione um veículo...</option>
+          <option value="">Carregando...</option>
         </select>
       </div>
       <div class="form-group">
@@ -65,12 +63,9 @@
       </div>
       <button class="btn-gold" onclick="buscarHistorico()">🔍 Buscar Trajeto</button>
     </div>
-
     <div class="panel-section" style="flex:1;overflow-y:auto">
-      <div class="panel-title">Posições encontradas</div>
-      <div class="history-list" id="history-list">
-        <p style="color:#666;font-size:12px">Selecione um veículo e período para ver o trajeto.</p>
-      </div>
+      <div class="panel-title">Posições</div>
+      <div id="history-list"><p class="msg">Selecione um veículo e período.</p></div>
     </div>
   </div>
 
@@ -92,26 +87,30 @@ const map = L.map('route-map').setView([-15.77, -47.92], 5);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(map);
 
 let polyline = null;
-let markers = [];
+let markersLayer = [];
 
-// Define datas padrão (hoje)
+// Datas padrão
 const now = new Date();
 const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0);
 const fmt = d => d.toISOString().slice(0,16);
 document.getElementById('date-start').value = fmt(startOfDay);
 document.getElementById('date-end').value = fmt(now);
 
-// Carrega veículos
 async function loadVehicles() {
-  const res = await fetch(`${CONFIG.API_URL}/api/vehicles`);
-  const data = await res.json();
-  const sel = document.getElementById('vehicle-select');
-  data.forEach(v => {
-    const opt = document.createElement('option');
-    opt.value = v.id;
-    opt.textContent = `${v.plate} — ${v.name || v.plate}`;
-    sel.appendChild(opt);
-  });
+  try {
+    const res = await fetch(`${CONFIG.API_URL}/api/vehicles`);
+    const data = await res.json();
+    const sel = document.getElementById('vehicle-select');
+    sel.innerHTML = '<option value="">Selecione um veículo...</option>';
+    data.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v.id;
+      opt.textContent = `${v.plate}`;
+      sel.appendChild(opt);
+    });
+  } catch(e) {
+    console.error('Erro ao carregar veículos:', e);
+  }
 }
 
 async function buscarHistorico() {
@@ -122,66 +121,59 @@ async function buscarHistorico() {
   if (!vehicleId) { alert('Selecione um veículo!'); return; }
   if (!start || !end) { alert('Informe o período!'); return; }
 
-  const res = await fetch(`${CONFIG.API_URL}/api/positions?vehicle_id=${vehicleId}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
-  const positions = await res.json();
+  document.getElementById('history-list').innerHTML = '<p class="msg">Buscando...</p>';
 
-  // Limpa mapa
-  if (polyline) map.removeLayer(polyline);
-  markers.forEach(m => map.removeLayer(m));
-  markers = [];
+  try {
+    const url = `${CONFIG.API_URL}/api/positions?vehicle_id=${vehicleId}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
+    console.log('Buscando:', url);
+    const res = await fetch(url);
+    const positions = await res.json();
 
-  if (!positions || positions.length === 0) {
-    document.getElementById('history-list').innerHTML = '<p style="color:#666;font-size:12px">Nenhuma posição encontrada no período.</p>';
-    document.getElementById('stats-bar').style.display = 'none';
-    return;
-  }
+    console.log('Posições recebidas:', positions.length);
 
-  // Desenha trajeto
-  const coords = positions.map(p => [p.lat, p.lng]);
-  polyline = L.polyline(coords, { color: '#d4a017', weight: 3, opacity: 0.8 }).addTo(map);
+    if (polyline) map.removeLayer(polyline);
+    markersLayer.forEach(m => map.removeLayer(m));
+    markersLayer = [];
 
-  // Marcador início
-  L.circleMarker(coords[0], { radius: 8, color: '#10b981', fillColor: '#10b981', fillOpacity: 1, weight: 2 })
-    .addTo(map).bindTooltip('🟢 Início').openTooltip();
-  markers.push(L.circleMarker(coords[0], { radius: 8, color: '#10b981', fillColor: '#10b981', fillOpacity: 1 }).addTo(map));
+    if (!Array.isArray(positions) || positions.length === 0) {
+      document.getElementById('history-list').innerHTML = '<p class="msg">Nenhuma posição encontrada.</p>';
+      document.getElementById('stats-bar').style.display = 'none';
+      return;
+    }
 
-  // Marcador fim
-  const last = coords[coords.length - 1];
-  markers.push(L.circleMarker(last, { radius: 8, color: '#ef4444', fillColor: '#ef4444', fillOpacity: 1, weight: 2 })
-    .addTo(map).bindTooltip('🔴 Fim'));
+    const coords = positions.map(p => [parseFloat(p.lat), parseFloat(p.lng)]);
+    polyline = L.polyline(coords, { color: '#d4a017', weight: 3, opacity: 0.8 }).addTo(map);
 
-  map.fitBounds(polyline.getBounds(), { padding: [40, 40] });
+    const startMarker = L.circleMarker(coords[0], { radius: 8, color: '#10b981', fillColor: '#10b981', fillOpacity: 1 }).addTo(map).bindTooltip('🟢 Início');
+    const endMarker = L.circleMarker(coords[coords.length-1], { radius: 8, color: '#ef4444', fillColor: '#ef4444', fillOpacity: 1 }).addTo(map).bindTooltip('🔴 Fim');
+    markersLayer.push(startMarker, endMarker);
 
-  // Lista de posições
-  const list = document.getElementById('history-list');
-  list.innerHTML = positions.map((p, i) => `
-    <div class="history-item" onclick="focusPosition(${p.lat}, ${p.lng})">
-      <div class="history-time">${new Date(p.recorded_at).toLocaleTimeString('pt-BR')}</div>
-      <div class="history-meta">
-        ${p.speed} km/h &nbsp;·&nbsp;
-        ${Number(p.lat).toFixed(4)}, ${Number(p.lng).toFixed(4)}
+    map.fitBounds(polyline.getBounds(), { padding: [40, 40] });
+
+    document.getElementById('history-list').innerHTML = positions.map(p => `
+      <div class="history-item" onclick="map.setView([${p.lat}, ${p.lng}], 16)">
+        <div class="history-time">${new Date(p.recorded_at).toLocaleTimeString('pt-BR')}</div>
+        <div class="history-meta">${p.speed || 0} km/h · ${Number(p.lat).toFixed(4)}, ${Number(p.lng).toFixed(4)}</div>
       </div>
-    </div>
-  `).join('');
+    `).join('');
 
-  // Estatísticas
-  const speeds = positions.map(p => p.speed || 0);
-  const maxVel = Math.max(...speeds);
-  const medVel = Math.round(speeds.reduce((a,b) => a+b, 0) / speeds.length);
-  const durMs = new Date(positions[positions.length-1].recorded_at) - new Date(positions[0].recorded_at);
-  const durMin = Math.round(durMs / 60000);
-  const durStr = durMin >= 60 ? `${Math.floor(durMin/60)}h ${durMin%60}min` : `${durMin} min`;
+    const speeds = positions.map(p => p.speed || 0);
+    const maxVel = Math.max(...speeds);
+    const medVel = Math.round(speeds.reduce((a,b) => a+b, 0) / speeds.length);
+    const durMs = new Date(positions[positions.length-1].recorded_at) - new Date(positions[0].recorded_at);
+    const durMin = Math.round(durMs / 60000);
+    const durStr = durMin >= 60 ? `${Math.floor(durMin/60)}h ${durMin%60}min` : `${durMin}min`;
 
-  document.getElementById('stat-pontos').textContent = positions.length;
-  document.getElementById('stat-maxvel').textContent = maxVel;
-  document.getElementById('stat-medvel').textContent = medVel;
-  document.getElementById('stat-duracao').textContent = durStr;
-  document.getElementById('stats-bar').style.display = 'flex';
-}
+    document.getElementById('stat-pontos').textContent = positions.length;
+    document.getElementById('stat-maxvel').textContent = maxVel;
+    document.getElementById('stat-medvel').textContent = medVel;
+    document.getElementById('stat-duracao').textContent = durStr;
+    document.getElementById('stats-bar').style.display = 'flex';
 
-function focusPosition(lat, lng) {
-  map.setView([lat, lng], 16);
-  L.popup().setLatLng([lat, lng]).setContent(`📍 ${Number(lat).toFixed(5)}, ${Number(lng).toFixed(5)}`).openOn(map);
+  } catch(e) {
+    console.error('Erro:', e);
+    document.getElementById('history-list').innerHTML = '<p class="msg" style="color:#ef4444">Erro ao buscar trajeto.</p>';
+  }
 }
 
 loadVehicles();
