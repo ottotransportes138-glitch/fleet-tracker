@@ -5,8 +5,8 @@ const router = express.Router();
 router.get("/", async (req, res) => {
   try {
     const { start, end } = req.query;
-    const dataStart = start ? new Date(start) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-    const dataEnd = end ? new Date(end) : new Date();
+    const dataStart = start ? start : "2026-03-26";
+    const dataEnd = end ? end + " 23:59:59" : new Date().toISOString();
 
     const { rows } = await db.query(`
       SELECT
@@ -24,10 +24,11 @@ router.get("/", async (req, res) => {
         (SELECT lng FROM positions WHERE vehicle_id = v.id ORDER BY recorded_at DESC LIMIT 1) as ultima_lng
       FROM vehicles v
       LEFT JOIN positions p ON p.vehicle_id = v.id
-        AND p.recorded_at BETWEEN $1 AND $2
+        AND p.recorded_at >= $1::timestamptz
+        AND p.recorded_at <= $2::timestamptz
       WHERE v.active = TRUE
       GROUP BY v.id, v.plate, v.name, v.speed_limit
-      ORDER BY excessos DESC, v.plate ASC
+      ORDER BY excessos DESC, vel_max DESC NULLS LAST, v.plate ASC
     `, [dataStart, dataEnd]);
 
     res.json(rows);
