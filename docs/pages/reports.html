@@ -7,11 +7,12 @@
 <link rel="stylesheet" href="../css/main.css"/>
 <style>
   .page { flex:1; padding:20px; overflow-y:auto; background:#f5f5f5; }
-  .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:10px; }
   .page-header h1 { font-size:18px; font-weight:700; color:#111; }
-  .mes-label { font-size:12px; color:#888; background:#fff; border:1px solid #ddd; padding:4px 12px; border-radius:20px; }
+  .filters { display:flex; gap:8px; align-items:center; }
+  .date-input { border:1px solid #ddd; border-radius:4px; padding:6px 10px; font-size:12px; background:#fff; }
+  .btn-filter { background:#d4a017; color:#111; border:none; padding:6px 14px; border-radius:4px; font-size:12px; font-weight:700; cursor:pointer; }
 
-  /* Cards de resumo */
   .summary-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
   .summary-card { background:#fff; border-radius:8px; padding:16px; border-top:4px solid #d4a017; box-shadow:0 1px 4px rgba(0,0,0,.08); }
   .summary-card.danger { border-top-color:#ef4444; }
@@ -20,23 +21,21 @@
   .summary-value { font-size:28px; font-weight:800; color:#111; margin-bottom:2px; }
   .summary-label { font-size:12px; color:#888; }
 
-  /* Tabela */
   .table-card { background:#fff; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.08); overflow:hidden; }
   .table-header { padding:14px 16px; border-bottom:2px solid #d4a017; display:flex; align-items:center; justify-content:space-between; }
   .table-header h2 { font-size:14px; font-weight:700; color:#111; }
   .search-input { border:1px solid #ddd; border-radius:4px; padding:6px 10px; font-size:12px; width:200px; }
   table { width:100%; border-collapse:collapse; font-size:13px; }
-  th { background:#f9f9f9; padding:10px 12px; text-align:left; font-size:11px; color:#555; font-weight:700; text-transform:uppercase; border-bottom:1px solid #eee; }
+  th { background:#f9f9f9; padding:10px 12px; text-align:left; font-size:11px; color:#555; font-weight:700; text-transform:uppercase; border-bottom:1px solid #eee; cursor:pointer; user-select:none; }
+  th:hover { color:#d4a017; }
   td { padding:10px 12px; border-bottom:1px solid #f0f0f0; }
   tr:hover td { background:#fffbf0; }
   .badge-danger { background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600; }
   .badge-ok { background:#f0fdf4; color:#16a34a; border:1px solid #86efac; padding:2px 8px; border-radius:12px; font-size:11px; }
-  .bar { height:6px; background:#e5e7eb; border-radius:3px; min-width:60px; }
+  .bar { height:6px; background:#e5e7eb; border-radius:3px; width:80px; display:inline-block; vertical-align:middle; margin-left:6px; }
   .bar-fill { height:100%; border-radius:3px; background:#d4a017; }
   .bar-fill.danger { background:#ef4444; }
   .loading { text-align:center; padding:40px; color:#888; font-size:14px; }
-  .sort-btn { cursor:pointer; user-select:none; }
-  .sort-btn:hover { color:#d4a017; }
 </style>
 </head>
 <body>
@@ -57,7 +56,12 @@
 <div class="page">
   <div class="page-header">
     <h1>📊 Dashboard de Desempenho</h1>
-    <span class="mes-label" id="mes-label">Carregando...</span>
+    <div class="filters">
+      <input type="date" class="date-input" id="date-start"/>
+      <span style="font-size:12px;color:#888">até</span>
+      <input type="date" class="date-input" id="date-end"/>
+      <button class="btn-filter" onclick="carregarDashboard()">Filtrar</button>
+    </div>
   </div>
 
   <div class="summary-grid">
@@ -67,7 +71,7 @@
     </div>
     <div class="summary-card danger">
       <div class="summary-value" id="total-excessos">—</div>
-      <div class="summary-label">Excessos de velocidade no mês</div>
+      <div class="summary-label">Excessos de velocidade</div>
     </div>
     <div class="summary-card ok">
       <div class="summary-value" id="total-movendo">—</div>
@@ -81,7 +85,7 @@
 
   <div class="table-card">
     <div class="table-header">
-      <h2>Desempenho por Veículo — Mês Atual</h2>
+      <h2 id="table-title">Desempenho por Veículo</h2>
       <input class="search-input" id="search" placeholder="🔍 Buscar placa..." oninput="filtrarTabela()"/>
     </div>
     <div id="table-container">
@@ -96,72 +100,37 @@ let dadosOriginais = [];
 let sortCol = 'excessos';
 let sortDir = -1;
 
+// Datas padrão
+const hoje = new Date();
+const inicioMes = new Date(2026, 2, 26); // 26/03/2026
+document.getElementById('date-start').value = inicioMes.toISOString().slice(0,10);
+document.getElementById('date-end').value = hoje.toISOString().slice(0,10);
+
 async function carregarDashboard() {
+  document.getElementById('table-container').innerHTML = '<div class="loading">⏳ Carregando dados...</div>';
+
+  const start = document.getElementById('date-start').value;
+  const end = document.getElementById('date-end').value + 'T23:59:59';
+
+  const startLabel = new Date(start).toLocaleDateString('pt-BR');
+  const endLabel = new Date(end).toLocaleDateString('pt-BR');
+  document.getElementById('table-title').textContent = `Desempenho por Veículo — ${startLabel} a ${endLabel}`;
+
   try {
-    const now = new Date();
-    const inicioMes = new Date("2026-03-26T00:00:00").toISOString();
-    const fimMes = now.toISOString();
+    const res = await fetch(`${CONFIG.API_URL}/api/dashboard?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
+    const dados = await res.json();
 
-    document.getElementById('mes-label').textContent =
-      now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-
-    // Busca veículos
-    const resV = await fetch(`${CONFIG.API_URL}/api/vehicles`);
-    const veiculos = await resV.json();
-    document.getElementById('total-veiculos').textContent = veiculos.length;
-
-    // Busca posições do mês para cada veículo
-    const dados = [];
     let totalExcessos = 0;
     let movendo = 0;
     let parado = 0;
 
-    for (const v of veiculos) {
-      try {
-        const res = await fetch(`${CONFIG.API_URL}/api/positions?vehicle_id=${v.id}&start=${encodeURIComponent(inicioMes)}&end=${encodeURIComponent(fimMes)}`);
-        const positions = await res.json();
+    dados.forEach(d => {
+      totalExcessos += parseInt(d.excessos) || 0;
+      const vel = parseInt(d.ultima_vel) || 0;
+      if (vel > 5) movendo++; else parado++;
+    });
 
-        if (!Array.isArray(positions) || positions.length === 0) {
-          dados.push({ plate: v.plate, name: v.name, excessos: 0, tempoMovendo: 0, tempoParado: 0, velMax: 0, ultimaVel: 0 });
-          parado++;
-          continue;
-        }
-
-        const limit = v.speed_limit || 90;
-        let excessos = 0;
-        let minMovendo = 0;
-        let minParado = 0;
-        let velMax = 0;
-
-        for (let i = 0; i < positions.length; i++) {
-          const p = positions[i];
-          const speed = p.speed || 0;
-          if (speed > limit) excessos++;
-          if (speed > 5) minMovendo++;
-          else minParado++;
-          if (speed > velMax) velMax = speed;
-        }
-
-        const ultimaVel = positions[positions.length - 1]?.speed || 0;
-        if (ultimaVel > 5) movendo++; else parado++;
-
-        totalExcessos += excessos;
-        dados.push({
-          plate: v.plate,
-          name: v.name,
-          excessos,
-          tempoMovendo: minMovendo,
-          tempoParado: minParado,
-          velMax,
-          ultimaVel,
-          total: positions.length
-        });
-      } catch(e) {
-        dados.push({ plate: v.plate, name: v.name, excessos: 0, tempoMovendo: 0, tempoParado: 0, velMax: 0, ultimaVel: 0 });
-        parado++;
-      }
-    }
-
+    document.getElementById('total-veiculos').textContent = dados.length;
     document.getElementById('total-excessos').textContent = totalExcessos.toLocaleString('pt-BR');
     document.getElementById('total-movendo').textContent = movendo;
     document.getElementById('total-parado').textContent = parado;
@@ -170,65 +139,67 @@ async function carregarDashboard() {
     renderTabela(dados);
 
   } catch(e) {
-    console.error('Erro dashboard:', e);
+    console.error('Erro:', e);
     document.getElementById('table-container').innerHTML = '<div class="loading" style="color:#ef4444">Erro ao carregar dados.</div>';
   }
 }
 
 function formatarTempo(minutos) {
+  minutos = parseInt(minutos) || 0;
   if (minutos === 0) return '—';
   const h = Math.floor(minutos / 60);
   const m = minutos % 60;
-  if (h === 0) return `${m}min`;
-  return `${h}h ${m}min`;
+  return h > 0 ? `${h}h ${m}min` : `${m}min`;
 }
 
 function renderTabela(dados) {
-  const sorted = [...dados].sort((a, b) => (a[sortCol] - b[sortCol]) * sortDir);
-  const maxExcessos = Math.max(...dados.map(d => d.excessos), 1);
-  const maxMovendo = Math.max(...dados.map(d => d.tempoMovendo), 1);
+  const sorted = [...dados].sort((a, b) => {
+    const va = parseFloat(a[sortCol]) || 0;
+    const vb = parseFloat(b[sortCol]) || 0;
+    return (va - vb) * sortDir;
+  });
+
+  const maxExcessos = Math.max(...dados.map(d => parseInt(d.excessos)||0), 1);
+  const maxMovendo = Math.max(...dados.map(d => parseInt(d.minutos_movendo)||0), 1);
+
+  const cols = [
+    { key:'plate', label:'Placa' },
+    { key:'excessos', label:'⚠️ Excessos' },
+    { key:'minutos_movendo', label:'🟢 Tempo em movimento' },
+    { key:'minutos_parado', label:'⚫ Tempo parado' },
+    { key:'vel_max', label:'🏎 Vel. máx' },
+    { key:'ultima_vel', label:'Status' },
+  ];
 
   document.getElementById('table-container').innerHTML = `
     <table>
       <thead>
         <tr>
-          <th>Placa</th>
-          <th class="sort-btn" onclick="sortBy('excessos')">⚠️ Excessos ${sortCol==='excessos'?(sortDir>0?'↑':'↓'):''}</th>
-          <th class="sort-btn" onclick="sortBy('tempoMovendo')">🟢 Tempo em movimento ${sortCol==='tempoMovendo'?(sortDir>0?'↑':'↓'):''}</th>
-          <th class="sort-btn" onclick="sortBy('tempoParado')">⚫ Tempo parado ${sortCol==='tempoParado'?(sortDir>0?'↑':'↓'):''}</th>
-          <th class="sort-btn" onclick="sortBy('velMax')">🏎 Vel. máx ${sortCol==='velMax'?(sortDir>0?'↑':'↓'):''}</th>
-          <th>Status</th>
+          ${cols.map(c => `<th onclick="sortBy('${c.key}')">${c.label} ${sortCol===c.key?(sortDir>0?'↑':'↓'):''}</th>`).join('')}
         </tr>
       </thead>
       <tbody>
-        ${sorted.map(d => `
-          <tr>
+        ${sorted.map(d => {
+          const exc = parseInt(d.excessos)||0;
+          const mov = parseInt(d.minutos_movendo)||0;
+          const par = parseInt(d.minutos_parado)||0;
+          const velMax = parseInt(d.vel_max)||0;
+          const ultimaVel = parseInt(d.ultima_vel)||0;
+          return `<tr>
             <td><b>${d.plate}</b></td>
             <td>
-              <div style="display:flex;align-items:center;gap:8px">
-                <span class="${d.excessos > 0 ? 'badge-danger' : 'badge-ok'}">${d.excessos}</span>
-                <div class="bar" style="width:80px">
-                  <div class="bar-fill danger" style="width:${Math.round(d.excessos/maxExcessos*100)}%"></div>
-                </div>
-              </div>
+              <span class="${exc>0?'badge-danger':'badge-ok'}">${exc}</span>
+              <span class="bar"><span class="bar-fill danger" style="width:${Math.round(exc/maxExcessos*100)}%;display:block"></span></span>
             </td>
             <td>
-              <div style="display:flex;align-items:center;gap:8px">
-                ${formatarTempo(d.tempoMovendo)}
-                <div class="bar" style="width:80px">
-                  <div class="bar-fill" style="width:${Math.round(d.tempoMovendo/maxMovendo*100)}%"></div>
-                </div>
-              </div>
+              ${formatarTempo(mov)}
+              <span class="bar"><span class="bar-fill" style="width:${Math.round(mov/maxMovendo*100)}%;display:block"></span></span>
             </td>
-            <td>${formatarTempo(d.tempoParado)}</td>
-            <td><b>${d.velMax} km/h</b></td>
-            <td>
-              ${d.ultimaVel > 5
-                ? `<span class="badge-ok">🟢 Movendo ${d.ultimaVel}km/h</span>`
-                : `<span style="color:#888;font-size:12px">⚫ Parado</span>`}
-            </td>
-          </tr>
-        `).join('')}
+            <td>${formatarTempo(par)}</td>
+            <td><b>${velMax} km/h</b></td>
+            <td>${ultimaVel>5?`<span class="badge-ok">🟢 ${ultimaVel}km/h</span>`:`<span style="color:#888;font-size:12px">⚫ Parado</span>`}</td>
+          </tr>`;
+        }).join('')}
       </tbody>
     </table>
   `;
@@ -242,8 +213,7 @@ function sortBy(col) {
 
 function filtrarTabela() {
   const q = document.getElementById('search').value.toLowerCase();
-  const filtrado = dadosOriginais.filter(d => d.plate.toLowerCase().includes(q));
-  renderTabela(filtrado);
+  renderTabela(dadosOriginais.filter(d => d.plate.toLowerCase().includes(q)));
 }
 
 carregarDashboard();
