@@ -6,11 +6,13 @@ const WSTT_URL = "https://wstt.omnilink.com.br/iasws/iasws.asmx";
 const USER = process.env.OMNILINK_USER;
 const PASS = process.env.OMNILINK_PASSWORD;
 
+// Cache da última posição de cada veículo
+const lastPosition = {};
+
 async function syncOmnilink() {
   const { rows: vehicles } = await db.query(
     "SELECT id, plate, name, omnilink_id, speed_limit FROM vehicles WHERE active = TRUE"
   );
-  console.log("[OMNILINK] Veiculos:", vehicles.length);
   if (vehicles.length === 0) return [];
 
   const positions = [];
@@ -43,24 +45,42 @@ async function syncOmnilink() {
       });
 
       const decoded = data.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
-      console.log("[OMNILINK] Resposta:", decoded.substring(0, 400));
-
       const lat = parseFloat(decoded.match(/<Latitude>(.*?)<\/Latitude>/)?.[1] || "0");
       const lng = parseFloat(decoded.match(/<Longitude>(.*?)<\/Longitude>/)?.[1] || "0");
       const speed = parseInt(decoded.match(/<VEL>(.*?)<\/VEL>/)?.[1] || "0");
       const heading = parseInt(decoded.match(/<DIR>(.*?)<\/DIR>/)?.[1] || "0");
       const recordedAt = decoded.match(/<DATA>(.*?)<\/DATA>/)?.[1]?.trim() || new Date().toISOString();
 
-      console.log("[OMNILINK]", vehicle.plate, "lat:", lat, "lng:", lng, "vel:", speed);
       if (!lat || !lng) continue;
 
+      // Verifica se a posição mudou desde a última vez
+      const last = lastPosition[vehicle.id];
+      const posicaoIgual = last &&
+        last.lat === lat &&
+        last.lng === lng &&
+        last.recordedAt === recordedAt;
+
+      if (posicaoIgual) continue;
+
+      // Atualiza cache
+      lastPosition[vehicle.id] = { lat, lng, recordedAt };
+
+      // Salva no banco
       await db.query(
-        "INSERT INTO positions (vehicle_id, lat, lng, speed, heading, recorded_at) VALUES ($1, $2, $3, $4, $5, $6)",
+        "INSERT INTO positions (vehicle_id, lat, lng, speed, heading, recorded_at) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING",
         [vehicle.id, lat, lng, speed, heading, new Date(recordedAt)]
       );
 
-      positions.push({ vehicleId: vehicle.id, plate: vehicle.plate, name: vehicle.name, lat, lng, speed, heading, recordedAt });
-      console.log("[OMNILINK] Posicao salva:", vehicle.plate, lat, lng);
+      positions.push({
+        vehicleId: vehicle.id,
+        plate: vehicle.plate,
+        name: vehicle.name,
+        speedLimit: vehicle.speed_limit,
+        lat, lng, speed, heading,
+        recordedAt,
+      });
+
+      console.log("[OMNILINK]", vehicle.plate, lat, lng, speed + "km/h");
 
     } catch (err) {
       console.error("[OMNILINK] Erro:", vehicle.plate, err.message);
