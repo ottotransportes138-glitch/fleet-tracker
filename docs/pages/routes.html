@@ -3,29 +3,72 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Otto GR — Histórico de Rotas</title>
+<title>Otto GR — Rotas</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="stylesheet" href="../css/main.css"/>
 <style>
-  .routes-layout { display: flex; flex: 1; overflow: hidden; }
-  .routes-panel  { width: 320px; flex-shrink: 0; background: #111; border-right: 3px solid #d4a017; display: flex; flex-direction: column; overflow-y: auto; }
-  .panel-section { padding: 12px; border-bottom: 1px solid #333; }
-  .panel-title   { font-size: 11px; font-weight: 700; color: #d4a017; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; }
-  .vehicle-select { width: 100%; background: #222; border: 1px solid #444; color: #fff; padding: 8px 10px; border-radius: 4px; font-size: 13px; }
-  .date-input { width: 100%; background: #222; border: 1px solid #444; color: #fff; padding: 8px 10px; border-radius: 4px; font-size: 13px; margin-bottom: 8px; }
-  .btn-gold { background: #d4a017; color: #111; border: none; padding: 8px 16px; border-radius: 4px; font-size: 13px; font-weight: 700; cursor: pointer; width: 100%; }
-  .btn-gold:hover { background: #b8860b; }
-  .history-list { flex: 1; overflow-y: auto; padding: 8px; }
-  .history-item { background: #1a1a1a; border: 1px solid #333; border-left: 3px solid #d4a017; border-radius: 4px; padding: 10px; margin-bottom: 6px; cursor: pointer; }
-  .history-item:hover { background: #222; }
-  .history-time { font-size: 12px; color: #d4a017; font-weight: 600; }
-  .history-meta { font-size: 11px; color: #888; margin-top: 2px; }
-  #route-map { flex: 1; }
-  .stats-bar { background: #111; border-top: 2px solid #d4a017; padding: 8px 16px; display: flex; gap: 24px; font-size: 12px; color: #aaa; }
-  .stat { display: flex; flex-direction: column; align-items: center; }
-  .stat-value { font-size: 16px; font-weight: 700; color: #d4a017; }
-  .stat-label { font-size: 10px; color: #666; text-transform: uppercase; }
-  .msg { color: #666; font-size: 12px; padding: 8px; }
+  .routes-layout { display:flex; flex:1; overflow:hidden; }
+  .routes-panel  { width:340px; flex-shrink:0; background:#111; border-right:3px solid #d4a017; display:flex; flex-direction:column; }
+
+  /* Abas */
+  .tabs { display:flex; border-bottom:2px solid #d4a017; }
+  .tab  { flex:1; padding:12px; text-align:center; font-size:13px; font-weight:600; color:#888; cursor:pointer; border:none; background:transparent; transition:.15s; }
+  .tab.active { color:#d4a017; background:#1a1a1a; }
+  .tab:hover  { color:#d4a017; }
+
+  .tab-content { display:none; flex:1; flex-direction:column; overflow-y:auto; }
+  .tab-content.active { display:flex; }
+
+  /* Aba Criar Rota */
+  .form-section { padding:14px; border-bottom:1px solid #333; }
+  .form-section label { display:block; font-size:11px; color:#888; margin-bottom:4px; text-transform:uppercase; }
+  .form-section input, .form-section select {
+    width:100%; background:#222; border:1px solid #444; color:#fff;
+    padding:8px 10px; border-radius:4px; font-size:13px; margin-bottom:8px;
+  }
+  .form-section input:focus, .form-section select:focus { outline:none; border-color:#d4a017; }
+  .hint { font-size:11px; color:#666; margin-bottom:6px; }
+  .wp-count { font-size:12px; color:#d4a017; font-weight:600; }
+  .btn-gold { background:#d4a017; color:#111; border:none; padding:8px 16px; border-radius:4px; font-size:13px; font-weight:700; cursor:pointer; }
+  .btn-gold:hover { background:#b8860b; }
+  .btn-ghost-dark { background:transparent; border:1px solid #444; color:#aaa; padding:8px 16px; border-radius:4px; font-size:13px; cursor:pointer; }
+  .btn-ghost-dark:hover { border-color:#d4a017; color:#d4a017; }
+
+  /* Lista de rotas */
+  .routes-list { padding:8px; flex:1; overflow-y:auto; }
+  .route-card { background:#1a1a1a; border:1px solid #333; border-left:3px solid #d4a017; border-radius:4px; padding:10px; margin-bottom:6px; cursor:pointer; }
+  .route-card:hover, .route-card.selected { background:#222; border-color:#d4a017; }
+  .route-card-name { font-size:13px; font-weight:600; color:#fff; margin-bottom:2px; }
+  .route-card-meta { font-size:11px; color:#666; }
+  .route-actions { display:flex; gap:6px; margin-top:8px; }
+  .btn-sm { padding:4px 10px; font-size:11px; border-radius:4px; cursor:pointer; border:none; }
+  .btn-edit { background:#333; color:#aaa; }
+  .btn-edit:hover { background:#444; color:#fff; }
+  .btn-del { background:#3a1a1a; color:#f87171; }
+  .btn-del:hover { background:#ef4444; color:#fff; }
+
+  /* Aba Percurso */
+  .percurso-section { padding:14px; border-bottom:1px solid #333; }
+  .percurso-section label { display:block; font-size:11px; color:#888; margin-bottom:4px; text-transform:uppercase; }
+  .percurso-section select, .percurso-section input {
+    width:100%; background:#222; border:1px solid #444; color:#fff;
+    padding:8px 10px; border-radius:4px; font-size:13px; margin-bottom:8px;
+  }
+  .percurso-section select:focus, .percurso-section input:focus { outline:none; border-color:#d4a017; }
+
+  .history-list { flex:1; overflow-y:auto; padding:8px; }
+  .history-item { background:#1a1a1a; border:1px solid #333; border-left:3px solid #d4a017; border-radius:4px; padding:8px 10px; margin-bottom:4px; cursor:pointer; }
+  .history-item:hover { background:#222; }
+  .history-time { font-size:12px; color:#d4a017; font-weight:600; }
+  .history-meta { font-size:11px; color:#666; }
+
+  /* Mapa */
+  #route-map { flex:1; }
+  .stats-bar { background:#111; border-top:2px solid #d4a017; padding:8px 16px; display:flex; gap:20px; }
+  .stat { display:flex; flex-direction:column; align-items:center; }
+  .stat-value { font-size:15px; font-weight:700; color:#d4a017; }
+  .stat-label { font-size:10px; color:#666; text-transform:uppercase; }
+  .msg { color:#666; font-size:12px; padding:8px; }
 </style>
 </head>
 <body>
@@ -39,36 +82,59 @@
     <a href="routes.html" class="active">🛣 Rotas</a>
     <a href="vehicles.html">🚛 Veículos</a>
     <a href="alerts.html">⚠️ Alertas</a>
-    <a href="reports.html">📊 Relatórios</a>
+    <a href="reports.html">📊 Dashboard</a>
   </nav>
 </nav>
 
 <div class="routes-layout">
+  <!-- Painel esquerdo -->
   <div class="routes-panel">
-    <div class="panel-section">
-      <div class="panel-title">Histórico de Trajeto</div>
-      <div class="form-group">
-        <label class="form-label" style="color:#888">Veículo</label>
-        <select class="vehicle-select" id="vehicle-select">
-          <option value="">Carregando...</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label" style="color:#888">Data início</label>
-        <input type="datetime-local" class="date-input" id="date-start"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label" style="color:#888">Data fim</label>
-        <input type="datetime-local" class="date-input" id="date-end"/>
-      </div>
-      <button class="btn-gold" onclick="buscarHistorico()">🔍 Buscar Trajeto</button>
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('criar')">➕ Criar Rota</button>
+      <button class="tab" onclick="showTab('percurso')">🔍 Percurso</button>
     </div>
-    <div class="panel-section" style="flex:1;overflow-y:auto">
-      <div class="panel-title">Posições</div>
-      <div id="history-list"><p class="msg">Selecione um veículo e período.</p></div>
+
+    <!-- ABA: CRIAR ROTA -->
+    <div class="tab-content active" id="tab-criar">
+      <div class="form-section">
+        <div id="form-title" style="font-size:13px;font-weight:700;color:#d4a017;margin-bottom:10px">Nova Rota</div>
+        <label>Nome da rota</label>
+        <input id="route-name" placeholder="Ex: SP → Campinas"/>
+        <label>Tolerância de desvio (metros)</label>
+        <input id="route-tolerance" type="number" value="500" min="100" max="5000"/>
+        <p class="hint">Clique no mapa para adicionar pontos da rota</p>
+        <p class="wp-count" id="wp-count">0 pontos adicionados</p>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn-ghost-dark" onclick="clearWaypoints()">Limpar</button>
+          <button class="btn-gold" onclick="saveRoute()">Salvar rota</button>
+        </div>
+      </div>
+
+      <div class="routes-list" id="routes-list">
+        <p class="msg">Carregando rotas...</p>
+      </div>
+    </div>
+
+    <!-- ABA: PERCURSO -->
+    <div class="tab-content" id="tab-percurso">
+      <div class="percurso-section">
+        <label>Veículo</label>
+        <select id="vehicle-select">
+          <option value="">Selecione um veículo...</option>
+        </select>
+        <label>Data início</label>
+        <input type="datetime-local" id="date-start"/>
+        <label>Data fim</label>
+        <input type="datetime-local" id="date-end"/>
+        <button class="btn-gold" style="width:100%" onclick="buscarPercurso()">🔍 Buscar Percurso</button>
+      </div>
+      <div class="history-list" id="history-list">
+        <p class="msg">Selecione um veículo e período.</p>
+      </div>
     </div>
   </div>
 
+  <!-- Mapa -->
   <div style="flex:1;display:flex;flex-direction:column">
     <div id="route-map"></div>
     <div class="stats-bar" id="stats-bar" style="display:none">
@@ -83,13 +149,118 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="../js/config.js"></script>
 <script>
+// ── Mapa ──────────────────────────────────────────────
 const map = L.map('route-map').setView([-15.77, -47.92], 5);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(map);
 
-let polyline = null;
-let markersLayer = [];
+// ── Abas ──────────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', (i===0&&name==='criar')||(i===1&&name==='percurso')));
+  document.getElementById('tab-criar').classList.toggle('active', name==='criar');
+  document.getElementById('tab-percurso').classList.toggle('active', name==='percurso');
+}
 
-// Datas padrão
+// ── ABA CRIAR ROTA ────────────────────────────────────
+let waypoints = [], waypointMarkers = [], routeLine = null, editingId = null, routePolylines = {};
+
+map.on('click', e => {
+  waypoints.push({ lat: e.latlng.lat, lng: e.latlng.lng });
+  const m = L.circleMarker([e.latlng.lat, e.latlng.lng], { radius:6, color:'#d4a017', fillColor:'#d4a017', fillOpacity:1, weight:2 })
+    .addTo(map).bindTooltip(`Ponto ${waypoints.length}`);
+  waypointMarkers.push(m);
+  updateRouteLine();
+  document.getElementById('wp-count').textContent = `${waypoints.length} pontos adicionados`;
+});
+
+function updateRouteLine() {
+  if (routeLine) map.removeLayer(routeLine);
+  if (waypoints.length < 2) return;
+  routeLine = L.polyline(waypoints.map(w => [w.lat, w.lng]), { color:'#d4a017', weight:2, dashArray:'6 4' }).addTo(map);
+}
+
+function clearWaypoints() {
+  waypoints = [];
+  waypointMarkers.forEach(m => map.removeLayer(m));
+  waypointMarkers = [];
+  if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+  document.getElementById('wp-count').textContent = '0 pontos adicionados';
+  document.getElementById('route-name').value = '';
+  document.getElementById('route-tolerance').value = 500;
+  document.getElementById('form-title').textContent = 'Nova Rota';
+  editingId = null;
+}
+
+async function saveRoute() {
+  const name = document.getElementById('route-name').value.trim();
+  if (!name) { alert('Informe o nome da rota'); return; }
+  if (waypoints.length < 2) { alert('Adicione pelo menos 2 pontos no mapa'); return; }
+  const body = { name, waypoints, tolerance_m: parseInt(document.getElementById('route-tolerance').value) };
+  const url = editingId ? `${CONFIG.API_URL}/api/routes/${editingId}` : `${CONFIG.API_URL}/api/routes`;
+  const method = editingId ? 'PUT' : 'POST';
+  await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  clearWaypoints();
+  loadRoutes();
+}
+
+async function loadRoutes() {
+  const res = await fetch(`${CONFIG.API_URL}/api/routes`);
+  const routes = await res.json();
+  Object.values(routePolylines).forEach(l => map.removeLayer(l));
+  routePolylines = {};
+
+  document.getElementById('routes-list').innerHTML = routes.length === 0
+    ? '<p class="msg">Nenhuma rota cadastrada.<br>Clique no mapa para criar.</p>'
+    : routes.map(r => `
+      <div class="route-card" id="rc-${r.id}" onclick="selectRoute('${r.id}')">
+        <div class="route-card-name">🛣 ${r.name}</div>
+        <div class="route-card-meta">${r.waypoints.length} pontos · tolerância ${r.tolerance_m}m</div>
+        <div class="route-actions">
+          <button class="btn-sm btn-edit" onclick="event.stopPropagation();editRoute(${JSON.stringify(r).replace(/"/g,'&quot;')})">✏️ Editar</button>
+          <button class="btn-sm btn-del" onclick="event.stopPropagation();deleteRoute('${r.id}')">🗑 Excluir</button>
+        </div>
+      </div>`).join('');
+
+  routes.forEach(r => {
+    if (r.waypoints.length >= 2) {
+      routePolylines[r.id] = L.polyline(r.waypoints.map(w => [w.lat, w.lng]), { color:'#d4a01788', weight:2 })
+        .addTo(map).bindTooltip(r.name);
+    }
+  });
+}
+
+function selectRoute(id) {
+  document.querySelectorAll('.route-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById(`rc-${id}`)?.classList.add('selected');
+  if (routePolylines[id]) map.fitBounds(routePolylines[id].getBounds(), { padding:[40,40] });
+}
+
+function editRoute(r) {
+  clearWaypoints();
+  editingId = r.id;
+  document.getElementById('route-name').value = r.name;
+  document.getElementById('route-tolerance').value = r.tolerance_m;
+  document.getElementById('form-title').textContent = '✏️ Editando Rota';
+  waypoints = r.waypoints;
+  waypoints.forEach((w, i) => {
+    const m = L.circleMarker([w.lat, w.lng], { radius:6, color:'#d4a017', fillColor:'#d4a017', fillOpacity:1, weight:2 })
+      .addTo(map).bindTooltip(`Ponto ${i+1}`);
+    waypointMarkers.push(m);
+  });
+  updateRouteLine();
+  document.getElementById('wp-count').textContent = `${waypoints.length} pontos adicionados`;
+  if (routeLine) map.fitBounds(routeLine.getBounds(), { padding:[40,40] });
+  showTab('criar');
+}
+
+async function deleteRoute(id) {
+  if (!confirm('Excluir esta rota?')) return;
+  await fetch(`${CONFIG.API_URL}/api/routes/${id}`, { method:'DELETE' });
+  loadRoutes();
+}
+
+// ── ABA PERCURSO ──────────────────────────────────────
+let percursoLine = null, percursoMarkers = [];
+
 const now = new Date();
 const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0);
 const fmt = d => d.toISOString().slice(0,16);
@@ -97,72 +268,61 @@ document.getElementById('date-start').value = fmt(startOfDay);
 document.getElementById('date-end').value = fmt(now);
 
 async function loadVehicles() {
-  try {
-    const res = await fetch(`${CONFIG.API_URL}/api/vehicles`);
-    const data = await res.json();
-    const sel = document.getElementById('vehicle-select');
-    sel.innerHTML = '<option value="">Selecione um veículo...</option>';
-    data.forEach(v => {
-      const opt = document.createElement('option');
-      opt.value = v.id;
-      opt.textContent = `${v.plate}`;
-      sel.appendChild(opt);
-    });
-  } catch(e) {
-    console.error('Erro ao carregar veículos:', e);
-  }
+  const res = await fetch(`${CONFIG.API_URL}/api/vehicles`);
+  const data = await res.json();
+  const sel = document.getElementById('vehicle-select');
+  sel.innerHTML = '<option value="">Selecione um veículo...</option>';
+  data.sort((a,b) => a.plate.localeCompare(b.plate)).forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v.id;
+    opt.textContent = v.plate;
+    sel.appendChild(opt);
+  });
 }
 
-async function buscarHistorico() {
+async function buscarPercurso() {
   const vehicleId = document.getElementById('vehicle-select').value;
   const start = document.getElementById('date-start').value;
   const end = document.getElementById('date-end').value;
-
   if (!vehicleId) { alert('Selecione um veículo!'); return; }
   if (!start || !end) { alert('Informe o período!'); return; }
 
-  document.getElementById('history-list').innerHTML = '<p class="msg">Buscando...</p>';
+  document.getElementById('history-list').innerHTML = '<p class="msg">⏳ Buscando...</p>';
+  document.getElementById('stats-bar').style.display = 'none';
+
+  if (percursoLine) map.removeLayer(percursoLine);
+  percursoMarkers.forEach(m => map.removeLayer(m));
+  percursoMarkers = [];
 
   try {
-    const url = `${CONFIG.API_URL}/api/positions?vehicle_id=${vehicleId}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
-    console.log('Buscando:', url);
-    const res = await fetch(url);
+    const res = await fetch(`${CONFIG.API_URL}/api/positions?vehicle_id=${vehicleId}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
     const positions = await res.json();
-
-    console.log('Posições recebidas:', positions.length);
-
-    if (polyline) map.removeLayer(polyline);
-    markersLayer.forEach(m => map.removeLayer(m));
-    markersLayer = [];
 
     if (!Array.isArray(positions) || positions.length === 0) {
       document.getElementById('history-list').innerHTML = '<p class="msg">Nenhuma posição encontrada.</p>';
-      document.getElementById('stats-bar').style.display = 'none';
       return;
     }
 
     const coords = positions.map(p => [parseFloat(p.lat), parseFloat(p.lng)]);
-    polyline = L.polyline(coords, { color: '#d4a017', weight: 3, opacity: 0.8 }).addTo(map);
+    percursoLine = L.polyline(coords, { color:'#d4a017', weight:3, opacity:.8 }).addTo(map);
 
-    const startMarker = L.circleMarker(coords[0], { radius: 8, color: '#10b981', fillColor: '#10b981', fillOpacity: 1 }).addTo(map).bindTooltip('🟢 Início');
-    const endMarker = L.circleMarker(coords[coords.length-1], { radius: 8, color: '#ef4444', fillColor: '#ef4444', fillOpacity: 1 }).addTo(map).bindTooltip('🔴 Fim');
-    markersLayer.push(startMarker, endMarker);
-
-    map.fitBounds(polyline.getBounds(), { padding: [40, 40] });
+    const mStart = L.circleMarker(coords[0], { radius:8, color:'#10b981', fillColor:'#10b981', fillOpacity:1 }).addTo(map).bindTooltip('🟢 Início');
+    const mEnd = L.circleMarker(coords[coords.length-1], { radius:8, color:'#ef4444', fillColor:'#ef4444', fillOpacity:1 }).addTo(map).bindTooltip('🔴 Fim');
+    percursoMarkers.push(mStart, mEnd);
+    map.fitBounds(percursoLine.getBounds(), { padding:[40,40] });
 
     document.getElementById('history-list').innerHTML = positions.map(p => `
-      <div class="history-item" onclick="map.setView([${p.lat}, ${p.lng}], 16)">
-        <div class="history-time">${new Date(p.recorded_at).toLocaleTimeString('pt-BR')}</div>
-        <div class="history-meta">${p.speed || 0} km/h · ${Number(p.lat).toFixed(4)}, ${Number(p.lng).toFixed(4)}</div>
-      </div>
-    `).join('');
+      <div class="history-item" onclick="map.setView([${p.lat},${p.lng}],16)">
+        <div class="history-time">${new Date(p.recorded_at).toLocaleString('pt-BR')}</div>
+        <div class="history-meta">${p.speed||0} km/h · ${Number(p.lat).toFixed(4)}, ${Number(p.lng).toFixed(4)}</div>
+      </div>`).join('');
 
-    const speeds = positions.map(p => p.speed || 0);
+    const speeds = positions.map(p => p.speed||0);
     const maxVel = Math.max(...speeds);
-    const medVel = Math.round(speeds.reduce((a,b) => a+b, 0) / speeds.length);
+    const medVel = Math.round(speeds.reduce((a,b)=>a+b,0)/speeds.length);
     const durMs = new Date(positions[positions.length-1].recorded_at) - new Date(positions[0].recorded_at);
-    const durMin = Math.round(durMs / 60000);
-    const durStr = durMin >= 60 ? `${Math.floor(durMin/60)}h ${durMin%60}min` : `${durMin}min`;
+    const durMin = Math.round(durMs/60000);
+    const durStr = durMin>=60 ? `${Math.floor(durMin/60)}h ${durMin%60}min` : `${durMin}min`;
 
     document.getElementById('stat-pontos').textContent = positions.length;
     document.getElementById('stat-maxvel').textContent = maxVel;
@@ -171,11 +331,11 @@ async function buscarHistorico() {
     document.getElementById('stats-bar').style.display = 'flex';
 
   } catch(e) {
-    console.error('Erro:', e);
-    document.getElementById('history-list').innerHTML = '<p class="msg" style="color:#ef4444">Erro ao buscar trajeto.</p>';
+    document.getElementById('history-list').innerHTML = '<p class="msg" style="color:#ef4444">Erro ao buscar percurso.</p>';
   }
 }
 
+loadRoutes();
 loadVehicles();
 </script>
 </body>
