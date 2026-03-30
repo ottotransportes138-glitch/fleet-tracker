@@ -2,7 +2,7 @@
 const db = require("../models/db");
 const router = express.Router();
 
-router.get("/dashboard", async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const { start, end } = req.query;
     const dataStart = start ? new Date(start) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
