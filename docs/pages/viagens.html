@@ -8,37 +8,53 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   .page { flex:1; padding:20px; overflow-y:auto; background:#f5f5f5; }
-  .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:8px; }
   .page-header h1 { font-size:18px; font-weight:700; color:#111; }
 
-  .upload-card { background:#fff; border-radius:8px; padding:20px; margin-bottom:20px; border-top:4px solid #d4a017; box-shadow:0 1px 4px rgba(0,0,0,.08); }
-  .upload-area { border:2px dashed #d4a017; border-radius:8px; padding:30px; text-align:center; cursor:pointer; transition:.2s; }
-  .upload-area:hover { background:#fffbf0; }
-  .upload-area p { color:#888; font-size:13px; margin-top:8px; }
-  .btn-upload { background:#d4a017; color:#111; border:none; padding:10px 20px; border-radius:4px; font-size:13px; font-weight:700; cursor:pointer; }
+  .upload-card { background:#fff; border-radius:8px; padding:16px; margin-bottom:16px; border-top:4px solid #d4a017; box-shadow:0 1px 4px rgba(0,0,0,.08); display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .btn-upload { background:#d4a017; color:#111; border:none; padding:9px 18px; border-radius:4px; font-size:13px; font-weight:700; cursor:pointer; }
   .btn-upload:hover { background:#b8860b; }
-  .upload-result { margin-top:12px; font-size:13px; padding:10px; border-radius:4px; display:none; }
+  .upload-result { font-size:12px; padding:6px 12px; border-radius:4px; display:none; }
   .upload-result.ok { background:#f0fdf4; color:#16a34a; border:1px solid #86efac; }
   .upload-result.erro { background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; }
 
-  .template-link { font-size:12px; color:#d4a017; cursor:pointer; text-decoration:underline; margin-top:8px; display:inline-block; }
+  .stats-row { display:grid; grid-template-columns:repeat(6,1fr); gap:8px; margin-bottom:16px; }
+  .stat-mini { background:#fff; border-radius:6px; padding:10px 12px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,.07); border-top:3px solid #ddd; }
+  .stat-mini.transito { border-top-color:#3b82f6; }
+  .stat-mini.carregar { border-top-color:#f59e0b; }
+  .stat-mini.carregado { border-top-color:#8b5cf6; }
+  .stat-mini.descarga { border-top-color:#10b981; }
+  .stat-mini.vazio { border-top-color:#6b7280; }
+  .stat-mini.manutencao { border-top-color:#ef4444; }
+  .stat-value { font-size:22px; font-weight:800; color:#111; }
+  .stat-label { font-size:10px; color:#888; text-transform:uppercase; letter-spacing:.05em; }
 
-  .viagens-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:12px; }
-  .viagem-card { background:#fff; border-radius:8px; padding:16px; box-shadow:0 1px 4px rgba(0,0,0,.08); border-left:4px solid #d4a017; }
-  .viagem-placa { font-size:16px; font-weight:800; color:#111; font-family:'IBM Plex Mono',monospace; }
-  .viagem-rota { font-size:13px; color:#555; margin:6px 0; display:flex; align-items:center; gap:6px; }
-  .viagem-rota span { color:#d4a017; font-weight:600; }
-  .progress-wrap { margin:12px 0 4px; }
-  .progress-label { display:flex; justify-content:space-between; font-size:11px; color:#888; margin-bottom:4px; }
-  .progress-bar { height:8px; background:#e5e7eb; border-radius:4px; overflow:hidden; }
-  .progress-fill { height:100%; background:linear-gradient(90deg,#d4a017,#f59e0b); border-radius:4px; transition:width .3s; }
-  .viagem-footer { display:flex; align-items:center; justify-content:space-between; margin-top:12px; }
-  .viagem-data { font-size:11px; color:#aaa; }
-  .btn-concluir { background:#111; color:#d4a017; border:1px solid #d4a017; padding:5px 12px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer; }
+  .search-bar { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+  .search-input { border:1px solid #ddd; border-radius:4px; padding:7px 12px; font-size:13px; flex:1; min-width:150px; }
+  .filter-btn { border:1px solid #ddd; border-radius:4px; padding:7px 12px; font-size:12px; background:#fff; cursor:pointer; }
+  .filter-btn.active { background:#111; color:#d4a017; border-color:#111; font-weight:700; }
+
+  .viagens-table { background:#fff; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.08); overflow:hidden; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { background:#111; color:#d4a017; padding:10px 12px; text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
+  td { padding:10px 12px; border-bottom:1px solid #f0f0f0; vertical-align:middle; }
+  tr:hover td { background:#fffbf0; }
+
+  .status-badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:700; }
+  .s-transito { background:#dbeafe; color:#1d4ed8; }
+  .s-carregar { background:#fef3c7; color:#92400e; }
+  .s-carregado { background:#ede9fe; color:#5b21b6; }
+  .s-descarga { background:#d1fae5; color:#065f46; }
+  .s-vazio { background:#f3f4f6; color:#374151; }
+  .s-manutencao { background:#fee2e2; color:#991b1b; }
+
+  .placa { font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:13px; }
+  .motorista { font-size:12px; color:#555; }
+  .btn-concluir { background:transparent; color:#d4a017; border:1px solid #d4a017; padding:4px 10px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer; }
   .btn-concluir:hover { background:#d4a017; color:#111; }
-  .btn-km { background:#f0f0f0; color:#555; border:1px solid #ddd; padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer; margin-right:6px; }
   .empty { text-align:center; padding:40px; color:#888; font-size:14px; }
-  .badge-concluida { background:#f0fdf4; color:#16a34a; border:1px solid #86efac; padding:2px 8px; border-radius:12px; font-size:11px; }
+  .file-label { font-size:12px; color:#888; }
+  .file-name { color:#d4a017; font-weight:600; }
 </style>
 </head>
 <body>
@@ -59,103 +75,146 @@
 
 <div class="page">
   <div class="page-header">
-    <h1>📦 Viagens Ativas</h1>
-    <span id="total-badge" style="font-size:12px;color:#888;background:#fff;border:1px solid #ddd;padding:4px 12px;border-radius:20px;">0 viagens</span>
+    <h1>📦 Status de Viagens</h1>
+    <div id="atualizado" style="font-size:11px;color:#888"></div>
   </div>
 
   <div class="upload-card">
-    <b style="font-size:14px">📤 Importar Viagens via Excel</b>
-    <p style="font-size:12px;color:#888;margin:6px 0 12px">Selecione um arquivo .xlsx com as colunas: <b>placa, origem, destino, km_total</b></p>
-    <div class="upload-area" onclick="document.getElementById('file-input').click()">
-      <div style="font-size:32px">📂</div>
-      <p>Clique para selecionar o arquivo Excel</p>
-      <p id="file-name" style="color:#d4a017;font-weight:600;margin-top:4px"></p>
+    <div>
+      <b style="font-size:13px">📤 Importar Excel</b>
+      <div class="file-label">Arquivo: <span class="file-name" id="file-name">nenhum selecionado</span></div>
     </div>
     <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none" onchange="processarExcel(this)"/>
-    <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
-      <button class="btn-upload" id="btn-importar" onclick="importarViagens()" style="display:none">📤 Importar Viagens</button>
-      <span class="template-link" onclick="baixarTemplate()">📥 Baixar template Excel</span>
-    </div>
+    <button class="btn-upload" onclick="document.getElementById('file-input').click()">📂 Selecionar Excel</button>
+    <button class="btn-upload" id="btn-importar" onclick="importarViagens()" style="display:none;background:#111;color:#d4a017">📤 Importar</button>
     <div class="upload-result" id="upload-result"></div>
   </div>
 
-  <div class="viagens-grid" id="viagens-grid">
-    <div class="empty">⏳ Carregando viagens...</div>
+  <div class="stats-row" id="stats-row">
+    <div class="stat-mini transito"><div class="stat-value" id="s-transito">—</div><div class="stat-label">Em Trânsito</div></div>
+    <div class="stat-mini carregar"><div class="stat-value" id="s-carregar">—</div><div class="stat-label">Carregar</div></div>
+    <div class="stat-mini carregado"><div class="stat-value" id="s-carregado">—</div><div class="stat-label">Carregado</div></div>
+    <div class="stat-mini descarga"><div class="stat-value" id="s-descarga">—</div><div class="stat-label">Ag. Descarga</div></div>
+    <div class="stat-mini vazio"><div class="stat-value" id="s-vazio">—</div><div class="stat-label">Vazio</div></div>
+    <div class="stat-mini manutencao"><div class="stat-value" id="s-manutencao">—</div><div class="stat-label">Manutenção</div></div>
+  </div>
+
+  <div class="search-bar">
+    <input class="search-input" id="search" placeholder="🔍 Buscar placa, motorista ou destino..." oninput="filtrar()"/>
+    <button class="filter-btn active" id="f-todos" onclick="setFiltro('todos')">Todos</button>
+    <button class="filter-btn" id="f-Em Trânsito" onclick="setFiltro('Em Trânsito')">🔵 Trânsito</button>
+    <button class="filter-btn" id="f-Carregar" onclick="setFiltro('Carregar')">🟡 Carregar</button>
+    <button class="filter-btn" id="f-Carregado" onclick="setFiltro('Carregado')">🟣 Carregado</button>
+    <button class="filter-btn" id="f-Ag. Descarga" onclick="setFiltro('Ag. Descarga')">🟢 Descarga</button>
+    <button class="filter-btn" id="f-Vazio" onclick="setFiltro('Vazio')">⚪ Vazio</button>
+    <button class="filter-btn" id="f-Manutenção" onclick="setFiltro('Manutenção')">🔴 Manutenção</button>
+  </div>
+
+  <div class="viagens-table">
+    <table>
+      <thead>
+        <tr>
+          <th>Placa</th>
+          <th>Motorista</th>
+          <th>Grupo</th>
+          <th>Cliente</th>
+          <th>Região</th>
+          <th>Destino</th>
+          <th>Status</th>
+          <th>Ref.</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tabela-body">
+        <tr><td colspan="9" class="empty">⏳ Carregando...</td></tr>
+      </tbody>
+    </table>
   </div>
 </div>
 
 <script src="../js/config.js"></script>
 <script>
-let viagensData = [];
+let todas = [];
+let filtroAtual = 'todos';
 let dadosExcel = [];
+
+const statusClass = {
+  'Em Trânsito': 's-transito',
+  'Carregar': 's-carregar',
+  'Carregado': 's-carregado',
+  'Ag. Descarga': 's-descarga',
+  'Vazio': 's-vazio',
+  'Manutenção': 's-manutencao',
+  'Manutenção': 's-manutencao',
+};
 
 async function carregarViagens() {
   try {
     const res = await fetch(`${CONFIG.API_URL}/api/viagens`);
-    viagensData = await res.json();
-    renderViagens();
-    document.getElementById('total-badge').textContent = `${viagensData.length} viagens`;
+    todas = await res.json();
+    atualizarStats();
+    renderTabela();
+    document.getElementById('atualizado').textContent = 'Atualizado: ' + new Date().toLocaleTimeString('pt-BR');
   } catch(e) {
     console.error(e);
   }
 }
 
-function renderViagens() {
-  const grid = document.getElementById('viagens-grid');
-  if (!viagensData.length) {
-    grid.innerHTML = '<div class="empty">Nenhuma viagem ativa. Importe um arquivo Excel para começar.</div>';
+function atualizarStats() {
+  const cnt = (s) => todas.filter(v => v.status_carga === s).length;
+  document.getElementById('s-transito').textContent = cnt('Em Trânsito');
+  document.getElementById('s-carregar').textContent = cnt('Carregar');
+  document.getElementById('s-carregado').textContent = cnt('Carregado');
+  document.getElementById('s-descarga').textContent = cnt('Ag. Descarga');
+  document.getElementById('s-vazio').textContent = cnt('Vazio');
+  document.getElementById('s-manutencao').textContent = cnt('Manutenção') + cnt('Manutencao');
+}
+
+function renderTabela() {
+  const q = document.getElementById('search').value.toLowerCase();
+  let lista = todas;
+  if (filtroAtual !== 'todos') lista = lista.filter(v => v.status_carga === filtroAtual);
+  if (q) lista = lista.filter(v =>
+    (v.placa||'').toLowerCase().includes(q) ||
+    (v.motorista||'').toLowerCase().includes(q) ||
+    (v.destino||'').toLowerCase().includes(q) ||
+    (v.cliente||'').toLowerCase().includes(q)
+  );
+
+  const tbody = document.getElementById('tabela-body');
+  if (!lista.length) {
+    tbody.innerHTML = `<tr><td colspan="9" class="empty">Nenhuma viagem encontrada.</td></tr>`;
     return;
   }
-  grid.innerHTML = viagensData.map(v => {
-    const km = parseFloat(v.km_percorrido) || 0;
-    const total = parseFloat(v.km_total) || 1;
-    const pct = Math.min(Math.round(km / total * 100), 100);
-    const data = new Date(v.criado_em).toLocaleDateString('pt-BR');
-    return `
-      <div class="viagem-card">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div class="viagem-placa">🚛 ${v.placa}</div>
-        </div>
-        <div class="viagem-rota">
-          <span>${v.origem}</span>
-          →
-          <span>${v.destino}</span>
-        </div>
-        <div class="progress-wrap">
-          <div class="progress-label">
-            <span>${km} km percorridos</span>
-            <span>${pct}% — ${total} km total</span>
-          </div>
-          <div class="progress-bar">
-            <div class="progress-fill" style="width:${pct}%"></div>
-          </div>
-        </div>
-        <div class="viagem-footer">
-          <div class="viagem-data">Iniciada em ${data}</div>
-          <div>
-            <button class="btn-km" onclick="atualizarKm('${v.id}', ${km})">✏️ km</button>
-            <button class="btn-concluir" onclick="concluirViagem('${v.id}')">✅ Concluir</button>
-          </div>
-        </div>
-      </div>
-    `;
+
+  tbody.innerHTML = lista.map(v => {
+    const sc = statusClass[v.status_carga] || 's-vazio';
+    return `<tr>
+      <td><span class="placa">${v.placa}</span></td>
+      <td><span class="motorista">${v.motorista || '—'}</span></td>
+      <td style="font-size:11px;color:#888">${v.grupo || '—'}</td>
+      <td style="font-size:12px">${v.cliente || '—'}</td>
+      <td style="font-size:12px">${v.origem || '—'}</td>
+      <td style="font-size:12px;font-weight:600">${v.destino || '—'}</td>
+      <td><span class="status-badge ${sc}">${v.status_carga || '—'}</span></td>
+      <td style="font-size:11px;color:#aaa">${v.ref_data || '—'}</td>
+      <td><button class="btn-concluir" onclick="concluirViagem('${v.id}')">✅</button></td>
+    </tr>`;
   }).join('');
 }
 
-async function concluirViagem(id) {
-  if (!confirm('Marcar esta viagem como concluída?')) return;
-  await fetch(`${CONFIG.API_URL}/api/viagens/${id}/concluir`, { method: 'PATCH' });
-  carregarViagens();
+function setFiltro(f) {
+  filtroAtual = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(f === 'todos' ? 'f-todos' : `f-${f}`)?.classList.add('active');
+  renderTabela();
 }
 
-async function atualizarKm(id, atual) {
-  const km = prompt('Informe os km percorridos:', atual);
-  if (km === null || isNaN(km)) return;
-  await fetch(`${CONFIG.API_URL}/api/viagens/${id}/km`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ km: parseFloat(km) })
-  });
+function filtrar() { renderTabela(); }
+
+async function concluirViagem(id) {
+  if (!confirm('Marcar como concluída?')) return;
+  await fetch(`${CONFIG.API_URL}/api/viagens/${id}/concluir`, { method: 'PATCH' });
   carregarViagens();
 }
 
@@ -163,18 +222,17 @@ function processarExcel(input) {
   const file = input.files[0];
   if (!file) return;
   document.getElementById('file-name').textContent = file.name;
-
   const reader = new FileReader();
   reader.onload = function(e) {
     const wb = XLSX.read(e.target.result, { type: 'array' });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const dados = XLSX.utils.sheet_to_json(ws);
-    dadosExcel = dados;
+    const ws = wb.Sheets['Frota Geral'] || wb.Sheets[wb.SheetNames[0]];
+    const dados = XLSX.utils.sheet_to_json(ws, { range: 3 });
+    dadosExcel = dados.filter(r => r['Placa'] || r['placa']);
     document.getElementById('btn-importar').style.display = 'inline-block';
     const result = document.getElementById('upload-result');
     result.style.display = 'block';
     result.className = 'upload-result ok';
-    result.textContent = `✅ ${dados.length} viagens encontradas no arquivo. Clique em "Importar Viagens" para continuar.`;
+    result.textContent = `✅ ${dadosExcel.length} veículos encontrados. Clique em Importar.`;
   };
   reader.readAsArrayBuffer(file);
 }
@@ -185,7 +243,6 @@ async function importarViagens() {
   result.style.display = 'block';
   result.className = 'upload-result ok';
   result.textContent = '⏳ Importando...';
-
   try {
     const res = await fetch(`${CONFIG.API_URL}/api/viagens/upload`, {
       method: 'POST',
@@ -193,37 +250,21 @@ async function importarViagens() {
       body: JSON.stringify(dadosExcel)
     });
     const data = await res.json();
-
-    if (data.erros?.length) {
-      result.className = 'upload-result erro';
-      result.textContent = `⚠️ ${data.importadas} importadas. Erros: ${data.erros.join(', ')}`;
-    } else {
-      result.className = 'upload-result ok';
-      result.textContent = `✅ ${data.importadas} viagens importadas com sucesso!`;
-    }
+    result.className = data.erros?.length ? 'upload-result erro' : 'upload-result ok';
+    result.textContent = `✅ ${data.importadas} importados.${data.erros?.length ? ' Erros: ' + data.erros.slice(0,3).join(', ') : ''}`;
     dadosExcel = [];
     document.getElementById('btn-importar').style.display = 'none';
-    document.getElementById('file-name').textContent = '';
+    document.getElementById('file-name').textContent = 'nenhum selecionado';
     document.getElementById('file-input').value = '';
     carregarViagens();
   } catch(e) {
     result.className = 'upload-result erro';
-    result.textContent = 'Erro ao importar: ' + e.message;
+    result.textContent = 'Erro: ' + e.message;
   }
 }
 
-function baixarTemplate() {
-  const ws = XLSX.utils.json_to_sheet([
-    { placa: 'RCI5G40', origem: 'São Paulo', destino: 'Goiânia', km_total: 870 },
-    { placa: 'PRM7C34', origem: 'Campinas', destino: 'Brasília', km_total: 1050 },
-  ]);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Viagens');
-  XLSX.writeFile(wb, 'template_viagens.xlsx');
-}
-
 carregarViagens();
-setInterval(carregarViagens, 30000);
+setInterval(carregarViagens, 60000);
 </script>
 </body>
 </html>

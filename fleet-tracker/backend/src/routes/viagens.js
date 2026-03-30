@@ -6,15 +6,8 @@ const router = express.Router();
 router.get("/", async (req, res) => {
   try {
     const { rows } = await db.query(`
-      SELECT v.*, 
-        p.lat as lat_atual, p.lng as lng_atual
+      SELECT v.*
       FROM viagens v
-      LEFT JOIN vehicles vh ON vh.id = v.vehicle_id
-      LEFT JOIN LATERAL (
-        SELECT lat, lng FROM positions 
-        WHERE vehicle_id = v.vehicle_id 
-        ORDER BY recorded_at DESC LIMIT 1
-      ) p ON true
       WHERE v.status = 'ativa'
       ORDER BY v.criado_em DESC
     `);
@@ -28,38 +21,44 @@ router.get("/", async (req, res) => {
 router.post("/upload", async (req, res) => {
   try {
     const viagens = req.body;
-    if (!Array.isArray(viagens)) return res.status(400).json({ error: "Envie um array de viagens" });
+    if (!Array.isArray(viagens)) return res.status(400).json({ error: "Envie um array" });
 
     let importadas = 0;
     let erros = [];
 
+    // Cancela todas viagens ativas antes de importar
+    await db.query("UPDATE viagens SET status='cancelada' WHERE status='ativa'");
+
     for (const v of viagens) {
       try {
+        const placa = (v.Placa || v.placa || '').toString().trim().toUpperCase();
+        if (!placa) continue;
+
+        const motorista = v.Motorista || v.motorista || '';
+        const status = v.Status || v.status || '';
+        const destino = v.Destino || v.destino || '';
+        const cliente = v.Cliente || v.cliente || '';
+        const regiao = v['Regiao'] || v['Região'] || v.regiao || '';
+        const grupo = v.Grupo || v.grupo || '';
+        const ref = v['Ref.'] || v.ref || '';
+
+        // Busca vehicle_id pelo plate
         const { rows } = await db.query(
           "SELECT id FROM vehicles WHERE plate = $1 LIMIT 1",
-          [v.placa?.toUpperCase()]
-        );
-        if (rows.length === 0) {
-          erros.push(`Placa não encontrada: ${v.placa}`);
-          continue;
-        }
-        const vehicleId = rows[0].id;
-
-        // Cancela viagem ativa anterior
-        await db.query(
-          "UPDATE viagens SET status='cancelada' WHERE vehicle_id=$1 AND status='ativa'",
-          [vehicleId]
+          [placa]
         );
 
-        // Cria nova viagem
+        const vehicleId = rows.length > 0 ? rows[0].id : null;
+
         await db.query(`
-          INSERT INTO viagens (vehicle_id, placa, origem, destino, km_total)
-          VALUES ($1, $2, $3, $4, $5)
-        `, [vehicleId, v.placa?.toUpperCase(), v.origem, v.destino, parseFloat(v.km_total) || 0]);
+          INSERT INTO viagens (vehicle_id, placa, motorista, origem, destino, cliente, status_carga, grupo, ref_data, km_total)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 0)
+          ON CONFLICT DO NOTHING
+        `, [vehicleId, placa, motorista, regiao, destino, cliente, status, grupo, ref]);
 
         importadas++;
       } catch (e) {
-        erros.push(`Erro na placa ${v.placa}: ${e.message}`);
+        erros.push(`${v.Placa}: ${e.message}`);
       }
     }
 
