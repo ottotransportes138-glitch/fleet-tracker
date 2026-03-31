@@ -11,17 +11,38 @@
   .page-header h1 { font-size:18px; font-weight:700; color:#111; }
   .btn-gold { background:#d4a017; color:#111; border:none; padding:9px 18px; border-radius:4px; font-size:13px; font-weight:700; cursor:pointer; }
   .btn-gold:hover { background:#b8860b; }
-  .search-bar { display:flex; gap:8px; margin-bottom:16px; }
-  .search-input { border:1px solid #ddd; border-radius:4px; padding:8px 12px; font-size:13px; flex:1; }
-  .vehicles-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; }
+  .btn-dark { background:#111; color:#d4a017; border:1px solid #d4a017; padding:9px 18px; border-radius:4px; font-size:13px; font-weight:700; cursor:pointer; }
+  .search-bar { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+  .search-input { border:1px solid #ddd; border-radius:4px; padding:8px 12px; font-size:13px; flex:1; min-width:200px; }
+  .vehicles-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px; }
   .vehicle-card { background:#fff; border-radius:8px; padding:14px; box-shadow:0 1px 4px rgba(0,0,0,.08); border-top:3px solid #d4a017; }
   .vehicle-plate { font-family:'IBM Plex Mono',monospace; font-size:18px; font-weight:700; color:#111; letter-spacing:.05em; }
   .vehicle-name { font-size:12px; color:#888; margin:4px 0 10px; }
-  .vehicle-info { font-size:12px; color:#555; display:flex; justify-content:space-between; }
+  .vehicle-info { font-size:12px; color:#555; display:flex; justify-content:space-between; align-items:center; }
   .badge-active { background:#f0fdf4; color:#16a34a; border:1px solid #86efac; padding:2px 8px; border-radius:12px; font-size:11px; }
   .badge-inactive { background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; padding:2px 8px; border-radius:12px; font-size:11px; }
   .loading { text-align:center; padding:40px; color:#888; }
   .summary { font-size:12px; color:#888; background:#fff; border:1px solid #ddd; padding:4px 12px; border-radius:20px; }
+  .card-actions { display:flex; gap:6px; margin-top:10px; }
+  .btn-sm { border:none; padding:4px 10px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer; }
+  .btn-edit { background:#f0f0f0; color:#333; }
+  .btn-edit:hover { background:#e0e0e0; }
+  .btn-route { background:#dbeafe; color:#1d4ed8; }
+  .btn-route:hover { background:#bfdbfe; }
+
+  /* Modal */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:1000; align-items:center; justify-content:center; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:#fff; border-radius:8px; padding:24px; width:400px; max-width:95vw; box-shadow:0 8px 32px rgba(0,0,0,.2); }
+  .modal h3 { font-size:16px; font-weight:700; color:#111; margin-bottom:16px; }
+  .form-group { margin-bottom:12px; }
+  .form-label { font-size:12px; color:#555; font-weight:600; display:block; margin-bottom:4px; }
+  .form-input { width:100%; border:1px solid #ddd; border-radius:4px; padding:8px 10px; font-size:13px; box-sizing:border-box; }
+  .form-input:focus { outline:none; border-color:#d4a017; }
+  .modal-footer { display:flex; gap:8px; justify-content:flex-end; margin-top:16px; }
+  .btn-cancel { background:#f0f0f0; color:#333; border:none; padding:8px 16px; border-radius:4px; font-size:13px; cursor:pointer; }
+  .msg-ok { background:#f0fdf4; color:#16a34a; border:1px solid #86efac; padding:8px 12px; border-radius:4px; font-size:13px; margin-top:8px; display:none; }
+  .msg-err { background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; padding:8px 12px; border-radius:4px; font-size:13px; margin-top:8px; display:none; }
 </style>
 </head>
 <body>
@@ -33,7 +54,7 @@
   <nav class="nav-links">
     <a href="index.html">🗺 Mapa ao vivo</a>
     <a href="routes.html">🛣 Rotas</a>
-    <a href="vehicles.html">🚛 Veículos</a>
+    <a href="vehicles.html" class="active">🚛 Veículos</a>
     <a href="viagens.html">📦 Viagens</a>
     <a href="alerts.html">⚠️ Alertas</a>
     <a href="reports.html">📊 Dashboard</a>
@@ -43,7 +64,10 @@
 <div class="page">
   <div class="page-header">
     <h1>🚛 Veículos Cadastrados</h1>
-    <span class="summary" id="summary">Carregando...</span>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span class="summary" id="summary">Carregando...</span>
+      <button class="btn-gold" onclick="abrirModalNovo()">+ Novo Veículo</button>
+    </div>
   </div>
   <div class="search-bar">
     <input class="search-input" id="search" placeholder="🔍 Buscar placa ou nome..." oninput="filtrar()"/>
@@ -53,15 +77,70 @@
   </div>
 </div>
 
+<!-- Modal Cadastro/Edição -->
+<div class="modal-overlay" id="modal-veiculo">
+  <div class="modal">
+    <h3 id="modal-title">➕ Novo Veículo</h3>
+    <input type="hidden" id="edit-id"/>
+    <div class="form-group">
+      <label class="form-label">Placa *</label>
+      <input class="form-input" id="field-plate" placeholder="Ex: RCI5G40" maxlength="10"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nome / Motorista</label>
+      <input class="form-input" id="field-name" placeholder="Ex: João Silva"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">ID Omnilink (Serial)</label>
+      <input class="form-input" id="field-omnilink" placeholder="Ex: 6029718" type="number"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Limite de Velocidade (km/h)</label>
+      <input class="form-input" id="field-limit" placeholder="90" type="number" value="90"/>
+    </div>
+    <div class="msg-ok" id="modal-ok"></div>
+    <div class="msg-err" id="modal-err"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-gold" onclick="salvarVeiculo()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Rota -->
+<div class="modal-overlay" id="modal-rota">
+  <div class="modal">
+    <h3>🛣 Ver Rota</h3>
+    <p style="font-size:13px;color:#555;margin-bottom:12px">Selecione o período para ver o histórico de rota:</p>
+    <div class="form-group">
+      <label class="form-label">Placa</label>
+      <input class="form-input" id="rota-plate" readonly style="background:#f5f5f5"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Data início</label>
+      <input class="form-input" type="datetime-local" id="rota-start"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Data fim</label>
+      <input class="form-input" type="datetime-local" id="rota-end"/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="fecharModalRota()">Cancelar</button>
+      <button class="btn-gold" onclick="irParaRota()">🗺 Ver Rota</button>
+    </div>
+  </div>
+</div>
+
 <script src="../js/config.js"></script>
 <script>
 let todos = [];
+let rotaVehicleId = '';
 
 async function carregar() {
   try {
-    const res = await fetch(`${CONFIG.API_URL}/api/vehicles`);
+    const res = await fetch(CONFIG.API_URL + '/api/vehicles');
     todos = await res.json();
-    document.getElementById('summary').textContent = `${todos.length} veículos`;
+    document.getElementById('summary').textContent = todos.length + ' veículos';
     renderizar(todos);
   } catch(e) {
     document.getElementById('vehicles-grid').innerHTML = '<div class="loading" style="color:#ef4444">Erro ao carregar.</div>';
@@ -69,21 +148,113 @@ async function carregar() {
 }
 
 function renderizar(lista) {
-  document.getElementById('vehicles-grid').innerHTML = lista.map(v => `
-    <div class="vehicle-card">
-      <div class="vehicle-plate">${v.plate}</div>
-      <div class="vehicle-name">${v.name || '—'}</div>
-      <div class="vehicle-info">
-        <span>Limite: <b>${v.speed_limit || 90} km/h</b></span>
-        <span class="${v.active ? 'badge-active' : 'badge-inactive'}">${v.active ? 'Ativo' : 'Inativo'}</span>
-      </div>
-    </div>
-  `).join('');
+  if (!lista.length) {
+    document.getElementById('vehicles-grid').innerHTML = '<div class="loading">Nenhum veículo encontrado.</div>';
+    return;
+  }
+  document.getElementById('vehicles-grid').innerHTML = lista.map(function(v) {
+    return '<div class="vehicle-card">' +
+      '<div class="vehicle-plate">' + v.plate + '</div>' +
+      '<div class="vehicle-name">' + (v.name || '—') + '</div>' +
+      '<div class="vehicle-info">' +
+        '<span>Limite: <b>' + (v.speed_limit || 90) + ' km/h</b></span>' +
+        '<span class="' + (v.active ? 'badge-active' : 'badge-inactive') + '">' + (v.active ? 'Ativo' : 'Inativo') + '</span>' +
+      '</div>' +
+      '<div class="card-actions">' +
+        '<button class="btn-sm btn-edit" onclick="abrirModalEditar(' + JSON.stringify(v).replace(/"/g, '&quot;') + ')">✏️ Editar</button>' +
+        '<button class="btn-sm btn-route" onclick="abrirModalRota(\'' + v.id + '\', \'' + v.plate + '\')">🛣 Rota</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
 }
 
 function filtrar() {
   const q = document.getElementById('search').value.toLowerCase();
-  renderizar(todos.filter(v => (v.plate||'').toLowerCase().includes(q) || (v.name||'').toLowerCase().includes(q)));
+  renderizar(todos.filter(function(v) {
+    return (v.plate||'').toLowerCase().includes(q) || (v.name||'').toLowerCase().includes(q);
+  }));
+}
+
+function abrirModalNovo() {
+  document.getElementById('modal-title').textContent = '➕ Novo Veículo';
+  document.getElementById('edit-id').value = '';
+  document.getElementById('field-plate').value = '';
+  document.getElementById('field-name').value = '';
+  document.getElementById('field-omnilink').value = '';
+  document.getElementById('field-limit').value = '90';
+  document.getElementById('field-plate').readOnly = false;
+  document.getElementById('modal-ok').style.display = 'none';
+  document.getElementById('modal-err').style.display = 'none';
+  document.getElementById('modal-veiculo').classList.add('open');
+}
+
+function abrirModalEditar(v) {
+  document.getElementById('modal-title').textContent = '✏️ Editar Veículo';
+  document.getElementById('edit-id').value = v.id;
+  document.getElementById('field-plate').value = v.plate;
+  document.getElementById('field-name').value = v.name || '';
+  document.getElementById('field-omnilink').value = v.omnilink_id || '';
+  document.getElementById('field-limit').value = v.speed_limit || 90;
+  document.getElementById('field-plate').readOnly = true;
+  document.getElementById('modal-ok').style.display = 'none';
+  document.getElementById('modal-err').style.display = 'none';
+  document.getElementById('modal-veiculo').classList.add('open');
+}
+
+function fecharModal() {
+  document.getElementById('modal-veiculo').classList.remove('open');
+}
+
+async function salvarVeiculo() {
+  const id = document.getElementById('edit-id').value;
+  const plate = document.getElementById('field-plate').value.trim().toUpperCase();
+  const name = document.getElementById('field-name').value.trim();
+  const omnilink_id = document.getElementById('field-omnilink').value.trim();
+  const speed_limit = parseInt(document.getElementById('field-limit').value) || 90;
+
+  if (!plate) {
+    document.getElementById('modal-err').textContent = 'Placa obrigatória!';
+    document.getElementById('modal-err').style.display = 'block';
+    return;
+  }
+
+  try {
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? CONFIG.API_URL + '/api/vehicles/' + id : CONFIG.API_URL + '/api/vehicles';
+    const res = await fetch(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plate, name, omnilink_id, speed_limit, active: true })
+    });
+    if (!res.ok) throw new Error('Erro ao salvar');
+    document.getElementById('modal-ok').textContent = id ? 'Veículo atualizado!' : 'Veículo cadastrado!';
+    document.getElementById('modal-ok').style.display = 'block';
+    document.getElementById('modal-err').style.display = 'none';
+    setTimeout(function() { fecharModal(); carregar(); }, 1200);
+  } catch(e) {
+    document.getElementById('modal-err').textContent = 'Erro: ' + e.message;
+    document.getElementById('modal-err').style.display = 'block';
+  }
+}
+
+function abrirModalRota(id, plate) {
+  rotaVehicleId = id;
+  document.getElementById('rota-plate').value = plate;
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  document.getElementById('rota-start').value = start.toISOString().slice(0,16);
+  document.getElementById('rota-end').value = now.toISOString().slice(0,16);
+  document.getElementById('modal-rota').classList.add('open');
+}
+
+function fecharModalRota() {
+  document.getElementById('modal-rota').classList.remove('open');
+}
+
+function irParaRota() {
+  const start = document.getElementById('rota-start').value;
+  const end = document.getElementById('rota-end').value;
+  window.location.href = 'routes.html?vehicle_id=' + rotaVehicleId + '&start=' + encodeURIComponent(start) + '&end=' + encodeURIComponent(end);
 }
 
 carregar();
