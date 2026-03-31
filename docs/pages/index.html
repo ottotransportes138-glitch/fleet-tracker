@@ -7,34 +7,19 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="stylesheet" href="../css/main.css"/>
 <style>
-  .map-wrapper { display:flex; flex:1; overflow:hidden; position:relative; }
+  .map-wrapper { display:flex; flex:1; overflow:hidden; }
   #map { flex:1; height:100%; }
-  .vehicles-panel {
-    width:280px;
-    flex-shrink:0;
-    background:#111;
-    border-left:3px solid #d4a017;
-    display:flex;
-    flex-direction:column;
-    overflow:hidden;
-  }
-  .vehicles-panel-title {
-    padding:12px 14px;
-    font-size:11px;
-    font-weight:700;
-    color:#d4a017;
-    text-transform:uppercase;
-    letter-spacing:.08em;
-    border-bottom:1px solid #222;
-    flex-shrink:0;
-  }
-  .vehicles-panel-list {
-    flex:1;
-    overflow-y:auto;
-  }
+  .vehicles-panel { width:290px; flex-shrink:0; background:#111; border-left:3px solid #d4a017; display:flex; flex-direction:column; overflow:hidden; }
+  .vehicles-panel-title { padding:10px 14px; font-size:11px; font-weight:700; color:#d4a017; text-transform:uppercase; letter-spacing:.08em; border-bottom:1px solid #222; flex-shrink:0; display:flex; align-items:center; justify-content:space-between; }
+  .tab-bar { display:flex; flex-shrink:0; border-bottom:1px solid #222; }
+  .tab-btn { flex:1; padding:8px 4px; font-size:11px; font-weight:700; color:#666; background:transparent; border:none; cursor:pointer; text-transform:uppercase; letter-spacing:.05em; border-bottom:3px solid transparent; transition:.15s; }
+  .tab-btn.active { color:#d4a017; border-bottom-color:#d4a017; }
+  .tab-btn:hover { color:#d4a017; }
+  .vehicles-panel-list { flex:1; overflow-y:auto; }
   .vehicles-panel-list::-webkit-scrollbar { width:4px; }
   .vehicles-panel-list::-webkit-scrollbar-track { background:#111; }
-  .vehicles-panel-list::-webkit-scrollbar-thumb { background:#333; border-radius:2px; }
+  .vehicles-panel-list::-webkit-scrollbar-thumb { background:#444; border-radius:2px; }
+  .count-badge { background:#d4a017; color:#111; font-size:10px; font-weight:800; padding:1px 6px; border-radius:10px; }
 </style>
 </head>
 <body>
@@ -54,7 +39,7 @@
 </nav>
 
 <div class="map-wrapper">
-  <main class="map-container" style="flex:1;display:flex;flex-direction:column;position:relative">
+  <main class="map-container" style="flex:1;display:flex;flex-direction:column">
     <div id="map" style="flex:1"></div>
     <div class="status-bar">
       <span id="ws-status" class="status-dot offline"></span>
@@ -64,9 +49,17 @@
   </main>
 
   <div class="vehicles-panel">
-    <div class="vehicles-panel-title">🚛 Veículos Ativos</div>
+    <div class="vehicles-panel-title">
+      🚛 Veículos Ativos
+      <span class="count-badge" id="count-total">0</span>
+    </div>
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tab-todos" onclick="setTab('todos')">Todos</button>
+      <button class="tab-btn" id="tab-RODOTREM" onclick="setTab('RODOTREM')">Rodotrem</button>
+      <button class="tab-btn" id="tab-LS" onclick="setTab('LS')">LS</button>
+    </div>
     <div class="vehicles-panel-list" id="vehicle-list">
-      <p class="muted" style="padding:12px;color:#666;font-size:12px">Carregando...</p>
+      <p style="padding:12px;color:#666;font-size:12px">Carregando...</p>
     </div>
   </div>
 </div>

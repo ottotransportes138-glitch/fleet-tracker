@@ -1,32 +1,22 @@
 ﻿const map = L.map('map', { zoomControl: true }).setView([-15.77, -47.92], 5);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap',
-  maxZoom: 19,
+  attribution: '© OpenStreetMap', maxZoom: 19,
 }).addTo(map);
 
 function truckIcon(color = '#3b82f6', speed = 0) {
   const moving = speed > 0;
   return L.divIcon({
     className: '',
-    html: `<div style="
-      background:${color};
-      border:2px solid #fff;
-      border-radius:50%;
-      width:${moving ? 16 : 14}px;
-      height:${moving ? 16 : 14}px;
-      box-shadow:0 0 8px ${color}aa;
-      display:flex;align-items:center;justify-content:center;
-      font-size:9px;color:#fff;font-weight:bold;">
-      ${moving ? '▶' : '■'}
-    </div>`,
-    iconSize: [16, 16],
-    iconAnchor: [8, 8],
+    html: `<div style="background:${color};border:2px solid #fff;border-radius:50%;width:${moving?16:14}px;height:${moving?16:14}px;box-shadow:0 0 8px ${color}aa;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:bold;">${moving?'▶':'■'}</div>`,
+    iconSize: [16,16], iconAnchor: [8,8],
   });
 }
 
 const markers = {};
 let viagensMap = {};
+let allVehicles = [];
+let tabAtual = 'todos';
 
 async function loadViagens() {
   try {
@@ -42,7 +32,8 @@ async function loadVehicles() {
   const res = await fetch(`${CONFIG.API_URL}/api/vehicles`);
   const data = await res.json();
   data.forEach(updateVehicle);
-  updateSidebarList(data);
+  allVehicles = data;
+  updateSidebarList(allVehicles);
 }
 
 function updateVehicle(v) {
@@ -57,22 +48,22 @@ function updateVehicle(v) {
   } else {
     markers[id] = L.marker([v.lat, v.lng], { icon: truckIcon(color, v.speed) })
       .addTo(map)
-      .bindPopup(() => popupContent(v), { maxWidth: 240 });
+      .bindPopup(() => popupContent(v), { maxWidth: 260 });
   }
   markers[id]._vehicleData = v;
   if (markers[id].isPopupOpen()) markers[id].setPopupContent(popupContent(v));
 }
 
 function statusCargaBadge(sc) {
-  const map = {
-    'Em Trânsito': { bg:'#dbeafe', color:'#1d4ed8' },
-    'Carregar':    { bg:'#fef3c7', color:'#92400e' },
-    'Carregado':   { bg:'#ede9fe', color:'#5b21b6' },
+  const m = {
+    'Em Trânsito':{ bg:'#dbeafe', color:'#1d4ed8' },
+    'Carregar':   { bg:'#fef3c7', color:'#92400e' },
+    'Carregado':  { bg:'#ede9fe', color:'#5b21b6' },
     'Ag. Descarga':{ bg:'#d1fae5', color:'#065f46' },
-    'Vazio':       { bg:'#f3f4f6', color:'#374151' },
-    'Manutenção':  { bg:'#fee2e2', color:'#991b1b' },
+    'Vazio':      { bg:'#f3f4f6', color:'#374151' },
+    'Manutenção': { bg:'#fee2e2', color:'#991b1b' },
   };
-  const s = map[sc] || { bg:'#f3f4f6', color:'#374151' };
+  const s = m[sc] || { bg:'#f3f4f6', color:'#374151' };
   return `<span style="background:${s.bg};color:${s.color};padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700">${sc||'—'}</span>`;
 }
 
@@ -84,9 +75,9 @@ function popupContent(v) {
   const status = over ? '🔴 Acima do limite' : moving ? '🟢 Em movimento' : '⚪ Parado';
   const updated = v.recorded_at ? new Date(v.recorded_at).toLocaleString('pt-BR') : '—';
   const viagem = viagensMap[v.plate] || {};
-  const km = viagem.km_percorrido || 0;
-  const kmTotal = viagem.km_total_calculado || 0;
-  const pct = kmTotal > 0 ? Math.min(Math.round(km / kmTotal * 100), 100) : 0;
+  const km = parseFloat(viagem.km_percorrido) || 0;
+  const kmTotal = parseFloat(viagem.km_total_calculado) || 0;
+  const pct = kmTotal > 0 ? Math.min(Math.round(km/kmTotal*100), 100) : 0;
 
   const viagemHtml = viagem.destino ? `
     <tr><td colspan="2" style="padding-top:8px;border-top:1px solid #eee;font-weight:700;color:#d4a017">📦 Viagem</td></tr>
@@ -98,7 +89,7 @@ function popupContent(v) {
     ${kmTotal > 0 ? `<tr><td colspan="2">
       <div style="margin-top:4px">
         <div style="display:flex;justify-content:space-between;font-size:11px;color:#888;margin-bottom:3px">
-          <span>${km} km percorridos</span><span>${pct}% (${kmTotal} km total)</span>
+          <span>${km} km</span><span>${pct}% de ${kmTotal} km</span>
         </div>
         <div style="height:6px;background:#e5e7eb;border-radius:3px">
           <div style="height:100%;width:${pct}%;background:#d4a017;border-radius:3px"></div>
@@ -117,71 +108,101 @@ function popupContent(v) {
         ${viagemHtml}
       </table>
       <div style="margin-top:8px;text-align:center">
-        <a href="https://www.google.com/maps?q=${v.lat},${v.lng}" target="_blank"
-          style="font-size:12px;color:#3b82f6;text-decoration:none">📍 Ver no Google Maps</a>
+        <a href="https://www.google.com/maps?q=${v.lat},${v.lng}" target="_blank" style="font-size:12px;color:#3b82f6;text-decoration:none">📍 Ver no Google Maps</a>
       </div>
     </div>`;
+}
+
+function setTab(tab) {
+  tabAtual = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  updateSidebarList(allVehicles);
+}
+
+window.setTab = setTab;
+
+function getTipoFrota(plate) {
+  const v = viagensMap[plate];
+  if (!v) return '';
+  // Detecta pelo grupo ou nome — RODOTREM tem grupos 1-JEAN, LS tem outros
+  // Usamos o campo que veio do Excel
+  return v.tipo_frota || '';
 }
 
 function updateSidebarList(vehicles) {
   const el = document.getElementById('vehicle-list');
   if (!vehicles || vehicles.length === 0) {
-    el.innerHTML = '<p class="muted">Nenhum veículo ativo</p>';
+    el.innerHTML = '<p style="padding:12px;color:#666;font-size:12px">Nenhum veículo ativo</p>';
     return;
   }
-  el.innerHTML = vehicles
-    .filter(v => v.lat && v.lng)
-    .sort((a, b) => (b.speed || 0) - (a.speed || 0))
-    .map(v => {
-      const speed = v.speed ?? 0;
-      const over = speed > (v.speed_limit || 90);
-      const moving = speed > 0;
-      const color = over ? '#ef4444' : moving ? '#10b981' : '#6b7280';
-      const id = v.vehicle_id || v.vehicleId;
+
+  let lista = vehicles.filter(v => v.lat && v.lng);
+
+  // Filtra por tipo se aba selecionada
+  if (tabAtual !== 'todos') {
+    lista = lista.filter(v => {
       const viagem = viagensMap[v.plate] || {};
-      const km = viagem.km_percorrido || 0;
-      const kmTotal = viagem.km_total_calculado || 0;
-      const pct = kmTotal > 0 ? Math.min(Math.round(km / kmTotal * 100), 100) : 0;
+      const tipo = (viagem.tipo_frota || '').toUpperCase();
+      return tipo === tabAtual;
+    });
+  }
 
-      const statusColors = {
-        'Em Trânsito': '#3b82f6',
-        'Carregar': '#f59e0b',
-        'Carregado': '#8b5cf6',
-        'Ag. Descarga': '#10b981',
-        'Vazio': '#6b7280',
-        'Manutenção': '#ef4444'
-      };
-      const scColor = statusColors[viagem.status_carga] || '#6b7280';
+  // Atualiza contador
+  const total = vehicles.filter(v => v.lat && v.lng).length;
+  const el2 = document.getElementById('count-total');
+  if (el2) el2.textContent = total;
 
-      const viagemHtml = viagem.destino ? `
-        <div style="margin-top:5px;font-size:11px;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-          📍 ${viagem.origem||'?'} → <b style="color:#d4a017">${viagem.destino||'?'}</b>
+  lista = lista.sort((a, b) => (b.speed||0) - (a.speed||0));
+
+  el.innerHTML = lista.map(v => {
+    const speed = v.speed ?? 0;
+    const over = speed > (v.speed_limit || 90);
+    const moving = speed > 0;
+    const color = over ? '#ef4444' : moving ? '#10b981' : '#6b7280';
+    const id = v.vehicle_id || v.vehicleId;
+    const viagem = viagensMap[v.plate] || {};
+    const km = parseFloat(viagem.km_percorrido) || 0;
+    const kmTotal = parseFloat(viagem.km_total_calculado) || 0;
+    const pct = kmTotal > 0 ? Math.min(Math.round(km/kmTotal*100), 100) : 0;
+    const tipo = viagem.tipo_frota ? `<span style="font-size:9px;color:#555;background:#222;padding:1px 5px;border-radius:4px;margin-left:4px">${viagem.tipo_frota}</span>` : '';
+
+    const statusColors = {
+      'Em Trânsito':'#3b82f6','Carregar':'#f59e0b','Carregado':'#8b5cf6',
+      'Ag. Descarga':'#10b981','Vazio':'#6b7280','Manutenção':'#ef4444'
+    };
+    const scColor = statusColors[viagem.status_carga] || '#6b7280';
+
+    const viagemHtml = viagem.destino ? `
+      <div style="margin-top:4px;font-size:11px;color:#aaa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+        📍 ${viagem.origem||'?'} → <b style="color:#d4a017">${viagem.destino||'?'}</b>
+      </div>
+      <div style="margin-top:3px">
+        <span style="background:${scColor}22;color:${scColor};padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700">${viagem.status_carga||''}</span>
+      </div>
+      ${kmTotal > 0 ? `
+      <div style="margin-top:5px">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:#555;margin-bottom:2px">
+          <span>${km} km</span><span>${pct}% de ${kmTotal}km</span>
         </div>
-        <div style="margin-top:3px">
-          <span style="background:${scColor}22;color:${scColor};padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700">${viagem.status_carga||''}</span>
+        <div style="height:4px;background:#222;border-radius:2px">
+          <div style="height:100%;width:${pct}%;background:#d4a017;border-radius:2px"></div>
         </div>
-        ${kmTotal > 0 ? `
-        <div style="margin-top:5px">
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-bottom:2px">
-            <span>${km} km</span><span>${pct}% de ${kmTotal} km</span>
-          </div>
-          <div style="height:4px;background:#333;border-radius:2px">
-            <div style="height:100%;width:${pct}%;background:#d4a017;border-radius:2px;transition:width .3s"></div>
-          </div>
-        </div>` : ''}
-      ` : '';
+      </div>` : ''}
+    ` : '';
 
-      return `
-        <div class="vehicle-item" onclick="focusVehicle('${id}')"
-          style="cursor:pointer;padding:8px;border-bottom:1px solid #222;display:flex;align-items:flex-start;gap:8px">
-          <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;margin-top:3px"></div>
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:bold;font-size:13px">${v.plate}</div>
-            <div style="font-size:11px;color:#888">${speed} km/h ${over ? '⚠️' : ''}</div>
-            ${viagemHtml}
-          </div>
-        </div>`;
-    }).join('');
+    return `<div onclick="focusVehicle('${id}')" style="cursor:pointer;padding:8px 10px;border-bottom:1px solid #1a1a1a;display:flex;align-items:flex-start;gap:8px">
+      <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;margin-top:3px"></div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center">
+          <span style="font-weight:700;font-size:13px;color:#fff">${v.plate}</span>
+          ${tipo}
+        </div>
+        <div style="font-size:11px;color:#888">${speed} km/h ${over?'⚠️':''}</div>
+        ${viagemHtml}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function focusVehicle(id) {
@@ -191,10 +212,9 @@ function focusVehicle(id) {
 
 window.onPositionsUpdate = function(positions) {
   positions.forEach(updateVehicle);
-  const allVehicles = Object.values(markers).map(m => m._vehicleData).filter(Boolean);
+  allVehicles = Object.values(markers).map(m => m._vehicleData).filter(Boolean);
   updateSidebarList(allVehicles);
-  document.getElementById('last-update').textContent =
-    'Atualizado: ' + new Date().toLocaleTimeString('pt-BR');
+  document.getElementById('last-update').textContent = 'Atualizado: ' + new Date().toLocaleTimeString('pt-BR');
 };
 
 setInterval(loadViagens, 60000);
