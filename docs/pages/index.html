@@ -6,11 +6,41 @@
 <title>Otto GR — Mapa ao Vivo</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="stylesheet" href="../css/main.css"/>
+<style>
+  .map-wrapper { display:flex; flex:1; overflow:hidden; position:relative; }
+  #map { flex:1; height:100%; }
+  .vehicles-panel {
+    width:280px;
+    flex-shrink:0;
+    background:#111;
+    border-left:3px solid #d4a017;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+  .vehicles-panel-title {
+    padding:12px 14px;
+    font-size:11px;
+    font-weight:700;
+    color:#d4a017;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    border-bottom:1px solid #222;
+    flex-shrink:0;
+  }
+  .vehicles-panel-list {
+    flex:1;
+    overflow-y:auto;
+  }
+  .vehicles-panel-list::-webkit-scrollbar { width:4px; }
+  .vehicles-panel-list::-webkit-scrollbar-track { background:#111; }
+  .vehicles-panel-list::-webkit-scrollbar-thumb { background:#333; border-radius:2px; }
+</style>
 </head>
 <body>
 <nav class="sidebar">
   <div class="logo">
-    <img src="../img/logo.jpg" alt="Otto GR"/>
+    <img src="../img/logo.jpg" alt="Otto GR" onerror="this.style.display='none'"/>
     <div class="logo-name">Otto Gerenciadora de Risco</div>
   </div>
   <nav class="nav-links">
@@ -21,19 +51,26 @@
     <a href="alerts.html">⚠️ Alertas <span class="badge" id="alert-count">0</span></a>
     <a href="reports.html">📊 Dashboard</a>
   </nav>
-  <div class="sidebar-vehicles">
-    <div class="sidebar-vehicles-title">Veículos ativos</div>
-    <div id="vehicle-list"><p class="muted">Carregando...</p></div>
-  </div>
 </nav>
-<main class="map-container">
-  <div id="map"></div>
-  <div class="status-bar">
-    <span id="ws-status" class="status-dot offline"></span>
-    <span id="ws-label">Conectando...</span>
-    <span class="ml-auto" id="last-update">—</span>
+
+<div class="map-wrapper">
+  <main class="map-container" style="flex:1;display:flex;flex-direction:column;position:relative">
+    <div id="map" style="flex:1"></div>
+    <div class="status-bar">
+      <span id="ws-status" class="status-dot offline"></span>
+      <span id="ws-label">Conectando...</span>
+      <span class="ml-auto" id="last-update">—</span>
+    </div>
+  </main>
+
+  <div class="vehicles-panel">
+    <div class="vehicles-panel-title">🚛 Veículos Ativos</div>
+    <div class="vehicles-panel-list" id="vehicle-list">
+      <p class="muted" style="padding:12px;color:#666;font-size:12px">Carregando...</p>
+    </div>
   </div>
-</main>
+</div>
+
 <div class="alert-toast hidden" id="alert-toast"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="../js/config.js"></script>
