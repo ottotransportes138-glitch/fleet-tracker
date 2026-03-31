@@ -101,13 +101,13 @@
 
   <div class="search-bar">
     <input class="search-input" id="search" placeholder="🔍 Buscar placa, motorista ou destino..." oninput="filtrar()"/>
-    <button class="filter-btn active" id="f-todos" onclick="setFiltro('todos')">Todos</button>
-    <button class="filter-btn" id="f-Em Trânsito" onclick="setFiltro('Em Trânsito')">🔵 Trânsito</button>
-    <button class="filter-btn" id="f-Carregar" onclick="setFiltro('Carregar')">🟡 Carregar</button>
-    <button class="filter-btn" id="f-Carregado" onclick="setFiltro('Carregado')">🟣 Carregado</button>
-    <button class="filter-btn" id="f-Ag. Descarga" onclick="setFiltro('Ag. Descarga')">🟢 Descarga</button>
-    <button class="filter-btn" id="f-Vazio" onclick="setFiltro('Vazio')">⚪ Vazio</button>
-    <button class="filter-btn" id="f-Manutenção" onclick="setFiltro('Manutenção')">🔴 Manutenção</button>
+    <button class="filter-btn active" data-filtro="todos" onclick="setFiltro(this)">Todos</button>
+    <button class="filter-btn" data-filtro="Em Trânsito" onclick="setFiltro(this)">🔵 Trânsito</button>
+    <button class="filter-btn" data-filtro="Carregar" onclick="setFiltro(this)">🟡 Carregar</button>
+    <button class="filter-btn" data-filtro="Carregado" onclick="setFiltro(this)">🟣 Carregado</button>
+    <button class="filter-btn" data-filtro="Ag. Descarga" onclick="setFiltro(this)">🟢 Descarga</button>
+    <button class="filter-btn" data-filtro="Vazio" onclick="setFiltro(this)">⚪ Vazio</button>
+    <button class="filter-btn" data-filtro="Manutenção" onclick="setFiltro(this)">🔴 Manutenção</button>
   </div>
 
   <div class="viagens-table">
@@ -203,10 +203,10 @@ function renderTabela() {
   }).join('');
 }
 
-function setFiltro(f) {
-  filtroAtual = f;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(f === 'todos' ? 'f-todos' : `f-${f}`)?.classList.add('active');
+function setFiltro(btn) {
+  filtroAtual = btn.getAttribute("data-filtro");
+  document.querySelectorAll(".filter-btn").forEach(function(b) { b.classList.remove("active"); });
+  btn.classList.add("active");
   renderTabela();
 }
 
