@@ -12,7 +12,6 @@
   .filters { display:flex; gap:8px; align-items:center; }
   .date-input { border:1px solid #ddd; border-radius:4px; padding:6px 10px; font-size:12px; background:#fff; }
   .btn-filter { background:#d4a017; color:#111; border:none; padding:6px 14px; border-radius:4px; font-size:12px; font-weight:700; cursor:pointer; }
-
   .summary-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
   .summary-card { background:#fff; border-radius:8px; padding:16px; border-top:4px solid #d4a017; box-shadow:0 1px 4px rgba(0,0,0,.08); }
   .summary-card.danger { border-top-color:#ef4444; }
@@ -20,7 +19,6 @@
   .summary-card.blue { border-top-color:#3b82f6; }
   .summary-value { font-size:28px; font-weight:800; color:#111; margin-bottom:2px; }
   .summary-label { font-size:12px; color:#888; }
-
   .table-card { background:#fff; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.08); overflow:hidden; }
   .table-header { padding:14px 16px; border-bottom:2px solid #d4a017; display:flex; align-items:center; justify-content:space-between; }
   .table-header h2 { font-size:14px; font-weight:700; color:#111; }
@@ -50,7 +48,7 @@
     <a href="vehicles.html">🚛 Veículos</a>
     <a href="viagens.html">📦 Viagens</a>
     <a href="alerts.html">⚠️ Alertas</a>
-    <a href="reports.html">📊 Dashboard</a>
+    <a href="reports.html" class="active">📊 Dashboard</a>
   </nav>
 </nav>
 
@@ -101,45 +99,33 @@ let dadosOriginais = [];
 let sortCol = 'excessos';
 let sortDir = -1;
 
-// Datas padrao v2
 const hoje = new Date();
-const inicioMes = new Date(2026, 2, 26); // 26/03/2026
-document.getElementById('date-start').value = inicioMes.toISOString().slice(0,10);
+document.getElementById('date-start').value = '2026-03-26';
 document.getElementById('date-end').value = hoje.toISOString().slice(0,10);
 
 async function carregarDashboard() {
-  document.getElementById('table-container').innerHTML = '<div class="loading">⏳ Carregando dados...</div>';
-
+  document.getElementById('table-container').innerHTML = '<div class="loading">Carregando dados...</div>';
   const start = document.getElementById('date-start').value;
-  const end = document.getElementById('date-end').value + 'T23:59:59';
-
-  const startLabel = new Date(start).toLocaleDateString('pt-BR');
-  const endLabel = new Date(end).toLocaleDateString('pt-BR');
-  document.getElementById('table-title').textContent = `Desempenho por Veículo — ${startLabel} a ${endLabel}`;
-
+  const end = document.getElementById('date-end').value;
+  const startLabel = new Date(start + 'T12:00:00').toLocaleDateString('pt-BR');
+  const endLabel = new Date(end + 'T12:00:00').toLocaleDateString('pt-BR');
+  document.getElementById('table-title').textContent = 'Desempenho por Veiculo — ' + startLabel + ' a ' + endLabel;
   try {
-    const res = await fetch(`${CONFIG.API_URL}/api/dashboard?start=${encodeURIComponent(start)}&end=\${encodeURIComponent\(document.getElementById\('date-end'\).value + ' 23:59:59'\)\}`);
+    const url = CONFIG.API_URL + '/api/dashboard?start=' + start + '&end=' + end;
+    const res = await fetch(url);
     let dados = await res.json();
     if (!Array.isArray(dados)) dados = [];
-
-    let totalExcessos = 0;
-    let movendo = 0;
-    let parado = 0;
-
-    dados.forEach(d => {
+    let totalExcessos = 0, movendo = 0, parado = 0;
+    dados.forEach(function(d) {
       totalExcessos += parseInt(d.excessos) || 0;
-      const vel = parseInt(d.ultima_vel) || 0;
-      if (vel > 5) movendo++; else parado++;
+      if ((parseInt(d.ultima_vel) || 0) > 5) movendo++; else parado++;
     });
-
     document.getElementById('total-veiculos').textContent = dados.length;
     document.getElementById('total-excessos').textContent = totalExcessos.toLocaleString('pt-BR');
     document.getElementById('total-movendo').textContent = movendo;
     document.getElementById('total-parado').textContent = parado;
-
     dadosOriginais = dados;
     renderTabela(dados);
-
   } catch(e) {
     console.error('Erro:', e);
     document.getElementById('table-container').innerHTML = '<div class="loading" style="color:#ef4444">Erro ao carregar dados.</div>';
@@ -151,75 +137,61 @@ function formatarTempo(minutos) {
   if (minutos === 0) return '—';
   const h = Math.floor(minutos / 60);
   const m = minutos % 60;
-  return h > 0 ? `${h}h ${m}min` : `${m}min`;
+  return h > 0 ? h + 'h ' + m + 'min' : m + 'min';
 }
 
 function renderTabela(dados) {
-  const sorted = [...dados].sort((a, b) => {
-    const va = parseFloat(a[sortCol]) || 0;
-    const vb = parseFloat(b[sortCol]) || 0;
-    return (va - vb) * sortDir;
+  const sorted = dados.slice().sort(function(a, b) {
+    return ((parseFloat(a[sortCol]) || 0) - (parseFloat(b[sortCol]) || 0)) * sortDir;
   });
-
-  const maxExcessos = Math.max(...dados.map(d => parseInt(d.excessos)||0), 1);
-  const maxMovendo = Math.max(...dados.map(d => parseInt(d.minutos_movendo)||0), 1);
-
-  const cols = [
-    { key:'plate', label:'Placa' },
-    { key:'excessos', label:'⚠️ Excessos' },
-    { key:'minutos_movendo', label:'🟢 Tempo em movimento' },
-    { key:'minutos_parado', label:'⚫ Tempo parado' },
-    { key:'vel_max', label:'🏎 Vel. máx' },
-    { key:'ultima_vel', label:'Status' },
-  ];
-
-  document.getElementById('table-container').innerHTML = `
-    <table>
-      <thead>
-        <tr>
-          ${cols.map(c => `<th onclick="sortBy('${c.key}')">${c.label} ${sortCol===c.key?(sortDir>0?'↑':'↓'):''}</th>`).join('')}
-        </tr>
-      </thead>
-      <tbody>
-        ${sorted.map(d => {
-          const exc = parseInt(d.excessos)||0;
-          const mov = parseInt(d.minutos_movendo)||0;
-          const par = parseInt(d.minutos_parado)||0;
-          const velMax = parseInt(d.vel_max)||0;
-          const ultimaVel = parseInt(d.ultima_vel)||0;
-          return `<tr>
-            <td><b>${d.plate}</b></td>
-            <td>
-              <span class="${exc>0?'badge-danger':'badge-ok'}">${exc}</span>
-              <span class="bar"><span class="bar-fill danger" style="width:${Math.round(exc/maxExcessos*100)}%;display:block"></span></span>
-            </td>
-            <td>
-              ${formatarTempo(mov)}
-              <span class="bar"><span class="bar-fill" style="width:${Math.round(mov/maxMovendo*100)}%;display:block"></span></span>
-            </td>
-            <td>${formatarTempo(par)}</td>
-            <td><b>${velMax} km/h</b></td>
-            <td>${ultimaVel>5?`<span class="badge-ok">🟢 ${ultimaVel}km/h</span>`:`<span style="color:#888;font-size:12px">⚫ Parado</span>`}</td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-    </table>
-  `;
+  const maxExcessos = Math.max.apply(null, dados.map(function(d){ return parseInt(d.excessos)||0; }).concat([1]));
+  const maxMovendo = Math.max.apply(null, dados.map(function(d){ return parseInt(d.minutos_movendo)||0; }).concat([1]));
+  const arrow = function(col) { return sortCol === col ? (sortDir > 0 ? ' ↑' : ' ↓') : ''; };
+  let rows = '';
+  sorted.forEach(function(d) {
+    const exc = parseInt(d.excessos)||0;
+    const mov = parseInt(d.minutos_movendo)||0;
+    const par = parseInt(d.minutos_parado)||0;
+    const velMax = parseInt(d.vel_max)||0;
+    const ultimaVel = parseInt(d.ultima_vel)||0;
+    const excPct = Math.round(exc/maxExcessos*100);
+    const movPct = Math.round(mov/maxMovendo*100);
+    const statusHtml = ultimaVel > 5
+      ? '<span class="badge-ok">🟢 ' + ultimaVel + 'km/h</span>'
+      : '<span style="color:#888;font-size:12px">⚫ Parado</span>';
+    rows += '<tr>' +
+      '<td><b>' + d.plate + '</b></td>' +
+      '<td><span class="' + (exc>0?'badge-danger':'badge-ok') + '">' + exc + '</span>' +
+        '<span class="bar"><span class="bar-fill danger" style="width:' + excPct + '%;display:block"></span></span></td>' +
+      '<td>' + formatarTempo(mov) +
+        '<span class="bar"><span class="bar-fill" style="width:' + movPct + '%;display:block"></span></span></td>' +
+      '<td>' + formatarTempo(par) + '</td>' +
+      '<td><b>' + velMax + ' km/h</b></td>' +
+      '<td>' + statusHtml + '</td>' +
+      '</tr>';
+  });
+  document.getElementById('table-container').innerHTML =
+    '<table><thead><tr>' +
+    '<th onclick="sortBy(\'plate\')">Placa' + arrow('plate') + '</th>' +
+    '<th onclick="sortBy(\'excessos\')">⚠️ Excessos' + arrow('excessos') + '</th>' +
+    '<th onclick="sortBy(\'minutos_movendo\')">🟢 Tempo em movimento' + arrow('minutos_movendo') + '</th>' +
+    '<th onclick="sortBy(\'minutos_parado\')">⚫ Tempo parado' + arrow('minutos_parado') + '</th>' +
+    '<th onclick="sortBy(\'vel_max\')">🏎 Vel. max' + arrow('vel_max') + '</th>' +
+    '<th>Status</th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table>';
 }
 
 function sortBy(col) {
-  if (sortCol === col) sortDir *= -1;
-  else { sortCol = col; sortDir = -1; }
+  if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = -1; }
   filtrarTabela();
 }
 
 function filtrarTabela() {
   const q = document.getElementById('search').value.toLowerCase();
-  renderTabela(dadosOriginais.filter(d => d.plate.toLowerCase().includes(q)));
+  renderTabela(dadosOriginais.filter(function(d){ return d.plate.toLowerCase().includes(q); }));
 }
 
 carregarDashboard();
 </script>
 </body>
 </html>
-
