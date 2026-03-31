@@ -1,0 +1,236 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Otto GR — Frota</title>
+<link rel="stylesheet" href="../css/main.css"/>
+<style>
+  .page { flex:1; padding:20px; overflow-y:auto; background:#f5f5f5; }
+  .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:10px; }
+  .page-header h1 { font-size:18px; font-weight:700; color:#111; }
+
+  .stats-row { display:grid; grid-template-columns:repeat(6,1fr); gap:8px; margin-bottom:16px; }
+  .stat-mini { background:#fff; border-radius:6px; padding:10px 12px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,.07); border-top:3px solid #ddd; }
+  .stat-mini.transito { border-top-color:#3b82f6; }
+  .stat-mini.carregar { border-top-color:#f59e0b; }
+  .stat-mini.carregado { border-top-color:#8b5cf6; }
+  .stat-mini.descarga { border-top-color:#10b981; }
+  .stat-mini.vazio { border-top-color:#6b7280; }
+  .stat-mini.manutencao { border-top-color:#ef4444; }
+  .stat-value { font-size:22px; font-weight:800; color:#111; }
+  .stat-label { font-size:10px; color:#888; text-transform:uppercase; }
+
+  .frota-card { background:#fff; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.08); overflow:hidden; }
+  .tab-bar { display:flex; border-bottom:2px solid #d4a017; }
+  .tab-btn { padding:12px 28px; font-size:13px; font-weight:700; color:#888; background:transparent; border:none; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; transition:.15s; }
+  .tab-btn.active { color:#111; border-bottom-color:#d4a017; }
+  .tab-btn:hover { color:#d4a017; }
+  .tab-count { background:#e5e7eb; color:#555; font-size:10px; padding:1px 6px; border-radius:10px; margin-left:6px; }
+  .tab-btn.active .tab-count { background:#d4a017; color:#111; }
+
+  .toolbar { padding:10px 16px; border-bottom:1px solid #eee; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .search-input { border:1px solid #ddd; border-radius:4px; padding:7px 12px; font-size:13px; flex:1; min-width:200px; }
+  .filter-btn { border:1px solid #ddd; border-radius:4px; padding:6px 12px; font-size:12px; background:#fff; cursor:pointer; white-space:nowrap; }
+  .filter-btn.active { background:#111; color:#d4a017; border-color:#111; font-weight:700; }
+
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { background:#111; color:#d4a017; padding:10px 12px; text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; cursor:pointer; user-select:none; }
+  th:hover { background:#1a1a1a; }
+  td { padding:9px 12px; border-bottom:1px solid #f0f0f0; vertical-align:middle; }
+  tr:hover td { background:#fffbf0; }
+  .placa { font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:13px; }
+  .motorista { font-size:12px; color:#555; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  .status-badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:700; white-space:nowrap; }
+  .s-transito { background:#dbeafe; color:#1d4ed8; }
+  .s-carregar { background:#fef3c7; color:#92400e; }
+  .s-carregado { background:#ede9fe; color:#5b21b6; }
+  .s-descarga { background:#d1fae5; color:#065f46; }
+  .s-vazio { background:#f3f4f6; color:#374151; }
+  .s-manutencao { background:#fee2e2; color:#991b1b; }
+
+  .progress-wrap { display:flex; align-items:center; gap:6px; min-width:100px; }
+  .progress-bar { flex:1; height:6px; background:#e5e7eb; border-radius:3px; }
+  .progress-fill { height:100%; background:#d4a017; border-radius:3px; }
+  .loading { text-align:center; padding:40px; color:#888; }
+  .atualizado { font-size:11px; color:#888; }
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="logo">
+    <img src="../img/logo.jpg" alt="Otto GR" onerror="this.style.display='none'"/>
+    <div class="logo-name">Otto Gerenciadora de Risco</div>
+  </div>
+  <nav class="nav-links">
+    <a href="index.html">🗺 Mapa ao vivo</a>
+    <a href="routes.html">🛣 Rotas</a>
+    <a href="vehicles.html">🚛 Veículos</a>
+    <a href="viagens.html">📦 Viagens</a>
+    <a href="frota.html" class="active">🚛 Frota</a>
+    <a href="alerts.html">⚠️ Alertas</a>
+    <a href="reports.html">📊 Dashboard</a>
+  </nav>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <h1>🚛 Status da Frota</h1>
+    <span class="atualizado" id="atualizado"></span>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-mini transito"><div class="stat-value" id="s-transito">—</div><div class="stat-label">Em Trânsito</div></div>
+    <div class="stat-mini carregar"><div class="stat-value" id="s-carregar">—</div><div class="stat-label">Carregar</div></div>
+    <div class="stat-mini carregado"><div class="stat-value" id="s-carregado">—</div><div class="stat-label">Carregado</div></div>
+    <div class="stat-mini descarga"><div class="stat-value" id="s-descarga">—</div><div class="stat-label">Ag. Descarga</div></div>
+    <div class="stat-mini vazio"><div class="stat-value" id="s-vazio">—</div><div class="stat-label">Vazio</div></div>
+    <div class="stat-mini manutencao"><div class="stat-value" id="s-manutencao">—</div><div class="stat-label">Manutenção</div></div>
+  </div>
+
+  <div class="frota-card">
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tab-RODOTREM" onclick="setTab('RODOTREM')">
+        🚛 Rodotrem <span class="tab-count" id="cnt-RODOTREM">0</span>
+      </button>
+      <button class="tab-btn" id="tab-LS" onclick="setTab('LS')">
+        🚚 LS <span class="tab-count" id="cnt-LS">0</span>
+      </button>
+      <button class="tab-btn" id="tab-TODOS" onclick="setTab('TODOS')">
+        📋 Todos <span class="tab-count" id="cnt-TODOS">0</span>
+      </button>
+    </div>
+    <div class="toolbar">
+      <input class="search-input" id="search" placeholder="🔍 Buscar placa, motorista, destino..." oninput="renderTabela()"/>
+      <button class="filter-btn active" data-filtro="todos" onclick="setFiltro(this)">Todos</button>
+      <button class="filter-btn" data-filtro="Em Trânsito" onclick="setFiltro(this)">🔵 Trânsito</button>
+      <button class="filter-btn" data-filtro="Carregar" onclick="setFiltro(this)">🟡 Carregar</button>
+      <button class="filter-btn" data-filtro="Carregado" onclick="setFiltro(this)">🟣 Carregado</button>
+      <button class="filter-btn" data-filtro="Ag. Descarga" onclick="setFiltro(this)">🟢 Descarga</button>
+      <button class="filter-btn" data-filtro="Vazio" onclick="setFiltro(this)">⚪ Vazio</button>
+      <button class="filter-btn" data-filtro="Manutenção" onclick="setFiltro(this)">🔴 Manutenção</button>
+    </div>
+    <div id="frota-container"><div class="loading">⏳ Carregando...</div></div>
+  </div>
+</div>
+
+<script src="../js/config.js"></script>
+<script>
+let todas = [];
+let tabAtual = 'RODOTREM';
+let filtroAtual = 'todos';
+
+const statusClass = {
+  'Em Trânsito':'s-transito','Carregar':'s-carregar','Carregado':'s-carregado',
+  'Ag. Descarga':'s-descarga','Vazio':'s-vazio','Manutenção':'s-manutencao'
+};
+
+async function carregar() {
+  try {
+    const res = await fetch(CONFIG.API_URL + '/api/viagens');
+    todas = await res.json();
+    atualizarStats();
+    atualizarContadores();
+    renderTabela();
+    document.getElementById('atualizado').textContent = 'Atualizado: ' + new Date().toLocaleTimeString('pt-BR');
+  } catch(e) {
+    document.getElementById('frota-container').innerHTML = '<div class="loading" style="color:#ef4444">Erro ao carregar.</div>';
+  }
+}
+
+function atualizarStats() {
+  const cnt = function(s) { return todas.filter(function(v){return v.status_carga===s;}).length; };
+  document.getElementById('s-transito').textContent = cnt('Em Trânsito');
+  document.getElementById('s-carregar').textContent = cnt('Carregar');
+  document.getElementById('s-carregado').textContent = cnt('Carregado');
+  document.getElementById('s-descarga').textContent = cnt('Ag. Descarga');
+  document.getElementById('s-vazio').textContent = cnt('Vazio');
+  document.getElementById('s-manutencao').textContent = cnt('Manutenção');
+}
+
+function atualizarContadores() {
+  const cntTipo = function(t) { return todas.filter(function(v){return (v.tipo_frota||'').toUpperCase()===t;}).length; };
+  document.getElementById('cnt-RODOTREM').textContent = cntTipo('RODOTREM');
+  document.getElementById('cnt-LS').textContent = cntTipo('LS');
+  document.getElementById('cnt-TODOS').textContent = todas.length;
+}
+
+function setTab(tab) {
+  tabAtual = tab;
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('tab-' + tab).classList.add('active');
+  renderTabela();
+}
+
+function setFiltro(btn) {
+  filtroAtual = btn.getAttribute('data-filtro');
+  document.querySelectorAll('.filter-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  renderTabela();
+}
+
+function renderTabela() {
+  const q = document.getElementById('search').value.toLowerCase();
+
+  let lista = todas.slice();
+
+  if (tabAtual !== 'TODOS') {
+    lista = lista.filter(function(v){ return (v.tipo_frota||'').toUpperCase() === tabAtual; });
+  }
+  if (filtroAtual !== 'todos') {
+    lista = lista.filter(function(v){ return v.status_carga === filtroAtual; });
+  }
+  if (q) {
+    lista = lista.filter(function(v){
+      return (v.placa||'').toLowerCase().includes(q) ||
+             (v.motorista||'').toLowerCase().includes(q) ||
+             (v.destino||'').toLowerCase().includes(q) ||
+             (v.cliente||'').toLowerCase().includes(q) ||
+             (v.grupo||'').toLowerCase().includes(q);
+    });
+  }
+
+  if (!lista.length) {
+    document.getElementById('frota-container').innerHTML = '<div class="loading">Nenhum veículo encontrado.</div>';
+    return;
+  }
+
+  let rows = '';
+  lista.forEach(function(v) {
+    const sc = statusClass[v.status_carga] || 's-vazio';
+    const km = parseFloat(v.km_percorrido)||0;
+    const kmTotal = parseFloat(v.km_total_calculado)||0;
+    const pct = kmTotal > 0 ? Math.min(Math.round(km/kmTotal*100),100) : 0;
+    const prog = kmTotal > 0
+      ? '<div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%"></div></div><span style="font-size:11px;color:#888">'+pct+'%</span></div>'
+      : '<span style="color:#aaa;font-size:12px">—</span>';
+
+    rows += '<tr>' +
+      '<td><span class="placa">' + v.placa + '</span></td>' +
+      '<td><span class="motorista" title="' + (v.motorista||'') + '">' + (v.motorista||'—') + '</span></td>' +
+      '<td style="font-size:11px;color:#888">' + (v.grupo||'—') + '</td>' +
+      '<td style="font-size:12px">' + (v.cliente||'—') + '</td>' +
+      '<td style="font-size:12px">' + (v.origem||'—') + '</td>' +
+      '<td style="font-size:12px;font-weight:600">' + (v.destino||'—') + '</td>' +
+      '<td><span class="status-badge ' + sc + '">' + (v.status_carga||'—') + '</span></td>' +
+      '<td>' + prog + '</td>' +
+      '<td style="font-size:11px;color:#aaa">' + (v.ref_data||'—') + '</td>' +
+    '</tr>';
+  });
+
+  document.getElementById('frota-container').innerHTML =
+    '<div style="overflow-x:auto"><table>' +
+    '<thead><tr>' +
+      '<th>Placa</th><th>Motorista</th><th>Grupo</th><th>Cliente</th>' +
+      '<th>Região</th><th>Destino</th><th>Status</th><th>Progresso</th><th>Ref.</th>' +
+    '</tr></thead>' +
+    '<tbody>' + rows + '</tbody>' +
+    '</table></div>';
+}
+
+carregar();
+setInterval(carregar, 60000);
+</script>
+</body>
+</html>
