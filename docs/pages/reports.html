@@ -12,6 +12,7 @@
   .filters { display:flex; gap:8px; align-items:center; }
   .date-input { border:1px solid #ddd; border-radius:4px; padding:6px 10px; font-size:12px; background:#fff; }
   .btn-filter { background:#d4a017; color:#111; border:none; padding:6px 14px; border-radius:4px; font-size:12px; font-weight:700; cursor:pointer; }
+
   .summary-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
   .summary-card { background:#fff; border-radius:8px; padding:16px; border-top:4px solid #d4a017; box-shadow:0 1px 4px rgba(0,0,0,.08); }
   .summary-card.danger { border-top-color:#ef4444; }
@@ -19,7 +20,8 @@
   .summary-card.blue { border-top-color:#3b82f6; }
   .summary-value { font-size:28px; font-weight:800; color:#111; margin-bottom:2px; }
   .summary-label { font-size:12px; color:#888; }
-  .table-card { background:#fff; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.08); overflow:hidden; }
+
+  .table-card { background:#fff; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.08); overflow:hidden; margin-bottom:20px; }
   .table-header { padding:14px 16px; border-bottom:2px solid #d4a017; display:flex; align-items:center; justify-content:space-between; }
   .table-header h2 { font-size:14px; font-weight:700; color:#111; }
   .search-input { border:1px solid #ddd; border-radius:4px; padding:6px 10px; font-size:12px; width:200px; }
@@ -34,6 +36,25 @@
   .bar-fill { height:100%; border-radius:3px; background:#d4a017; }
   .bar-fill.danger { background:#ef4444; }
   .loading { text-align:center; padding:40px; color:#888; font-size:14px; }
+
+  /* Abas frota */
+  .frota-card { background:#fff; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.08); overflow:hidden; }
+  .frota-tabs { display:flex; border-bottom:2px solid #d4a017; }
+  .frota-tab { padding:12px 24px; font-size:13px; font-weight:700; color:#888; background:transparent; border:none; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; }
+  .frota-tab.active { color:#111; border-bottom-color:#d4a017; }
+  .frota-tab:hover { color:#d4a017; }
+  .frota-search { padding:10px 16px; border-bottom:1px solid #eee; display:flex; gap:8px; align-items:center; }
+  .frota-search input { border:1px solid #ddd; border-radius:4px; padding:6px 10px; font-size:12px; flex:1; }
+  .frota-content { overflow-x:auto; }
+
+  .status-badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:700; }
+  .s-transito { background:#dbeafe; color:#1d4ed8; }
+  .s-carregar { background:#fef3c7; color:#92400e; }
+  .s-carregado { background:#ede9fe; color:#5b21b6; }
+  .s-descarga { background:#d1fae5; color:#065f46; }
+  .s-vazio { background:#f3f4f6; color:#374151; }
+  .s-manutencao { background:#fee2e2; color:#991b1b; }
+  .placa-mono { font-family:'IBM Plex Mono',monospace; font-weight:700; }
 </style>
 </head>
 <body>
@@ -64,31 +85,32 @@
   </div>
 
   <div class="summary-grid">
-    <div class="summary-card blue">
-      <div class="summary-value" id="total-veiculos">—</div>
-      <div class="summary-label">Veículos monitorados</div>
-    </div>
-    <div class="summary-card danger">
-      <div class="summary-value" id="total-excessos">—</div>
-      <div class="summary-label">Excessos de velocidade</div>
-    </div>
-    <div class="summary-card ok">
-      <div class="summary-value" id="total-movendo">—</div>
-      <div class="summary-label">Veículos em movimento agora</div>
-    </div>
-    <div class="summary-card">
-      <div class="summary-value" id="total-parado">—</div>
-      <div class="summary-label">Veículos parados agora</div>
-    </div>
+    <div class="summary-card blue"><div class="summary-value" id="total-veiculos">—</div><div class="summary-label">Veículos monitorados</div></div>
+    <div class="summary-card danger"><div class="summary-value" id="total-excessos">—</div><div class="summary-label">Excessos de velocidade</div></div>
+    <div class="summary-card ok"><div class="summary-value" id="total-movendo">—</div><div class="summary-label">Veículos em movimento agora</div></div>
+    <div class="summary-card"><div class="summary-value" id="total-parado">—</div><div class="summary-label">Veículos parados agora</div></div>
   </div>
 
-  <div class="table-card">
+  <div class="table-card" style="margin-bottom:20px">
     <div class="table-header">
       <h2 id="table-title">Desempenho por Veículo</h2>
       <input class="search-input" id="search" placeholder="🔍 Buscar placa..." oninput="filtrarTabela()"/>
     </div>
-    <div id="table-container">
-      <div class="loading">⏳ Carregando dados...</div>
+    <div id="table-container"><div class="loading">⏳ Carregando dados...</div></div>
+  </div>
+
+  <!-- Abas Frota -->
+  <div class="frota-card">
+    <div class="frota-tabs">
+      <button class="frota-tab active" id="ft-RODOTREM" onclick="setFrotaTab('RODOTREM')">🚛 Rodotrem</button>
+      <button class="frota-tab" id="ft-LS" onclick="setFrotaTab('LS')">🚚 LS</button>
+    </div>
+    <div class="frota-search">
+      <input id="frota-search" placeholder="🔍 Buscar placa, motorista, destino..." oninput="filtrarFrota()"/>
+      <span id="frota-count" style="font-size:12px;color:#888;white-space:nowrap"></span>
+    </div>
+    <div class="frota-content">
+      <div id="frota-table"><div class="loading">⏳ Carregando frota...</div></div>
     </div>
   </div>
 </div>
@@ -98,28 +120,33 @@
 let dadosOriginais = [];
 let sortCol = 'excessos';
 let sortDir = -1;
+let frotaTabAtual = 'RODOTREM';
+let todasViagens = [];
 
 const hoje = new Date();
 document.getElementById('date-start').value = '2026-03-26';
 document.getElementById('date-end').value = hoje.toISOString().slice(0,10);
 
 async function carregarDashboard() {
-  document.getElementById('table-container').innerHTML = '<div class="loading">Carregando dados...</div>';
+  document.getElementById('table-container').innerHTML = '<div class="loading">Carregando...</div>';
   const start = document.getElementById('date-start').value;
   const end = document.getElementById('date-end').value;
-  const startLabel = new Date(start + 'T12:00:00').toLocaleDateString('pt-BR');
-  const endLabel = new Date(end + 'T12:00:00').toLocaleDateString('pt-BR');
-  document.getElementById('table-title').textContent = 'Desempenho por Veiculo — ' + startLabel + ' a ' + endLabel;
+  const startLabel = new Date(start+'T12:00:00').toLocaleDateString('pt-BR');
+  const endLabel = new Date(end+'T12:00:00').toLocaleDateString('pt-BR');
+  document.getElementById('table-title').textContent = 'Desempenho por Veículo — ' + startLabel + ' a ' + endLabel;
+
   try {
     const url = CONFIG.API_URL + '/api/dashboard?start=' + start + '&end=' + end;
     const res = await fetch(url);
     let dados = await res.json();
     if (!Array.isArray(dados)) dados = [];
-    let totalExcessos = 0, movendo = 0, parado = 0;
+
+    let totalExcessos=0, movendo=0, parado=0;
     dados.forEach(function(d) {
-      totalExcessos += parseInt(d.excessos) || 0;
-      if ((parseInt(d.ultima_vel) || 0) > 5) movendo++; else parado++;
+      totalExcessos += parseInt(d.excessos)||0;
+      if ((parseInt(d.ultima_vel)||0) > 5) movendo++; else parado++;
     });
+
     document.getElementById('total-veiculos').textContent = dados.length;
     document.getElementById('total-excessos').textContent = totalExcessos.toLocaleString('pt-BR');
     document.getElementById('total-movendo').textContent = movendo;
@@ -127,71 +154,148 @@ async function carregarDashboard() {
     dadosOriginais = dados;
     renderTabela(dados);
   } catch(e) {
-    console.error('Erro:', e);
-    document.getElementById('table-container').innerHTML = '<div class="loading" style="color:#ef4444">Erro ao carregar dados.</div>';
+    document.getElementById('table-container').innerHTML = '<div class="loading" style="color:#ef4444">Erro ao carregar.</div>';
   }
 }
 
+async function carregarFrota() {
+  try {
+    const res = await fetch(CONFIG.API_URL + '/api/viagens');
+    todasViagens = await res.json();
+    renderFrota();
+  } catch(e) {
+    document.getElementById('frota-table').innerHTML = '<div class="loading" style="color:#ef4444">Erro ao carregar frota.</div>';
+  }
+}
+
+function setFrotaTab(tab) {
+  frotaTabAtual = tab;
+  document.querySelectorAll('.frota-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('ft-' + tab).classList.add('active');
+  document.getElementById('frota-search').value = '';
+  renderFrota();
+}
+
+function filtrarFrota() { renderFrota(); }
+
+function renderFrota() {
+  const q = document.getElementById('frota-search').value.toLowerCase();
+  const statusClass = {
+    'Em Trânsito':'s-transito','Carregar':'s-carregar','Carregado':'s-carregado',
+    'Ag. Descarga':'s-descarga','Vazio':'s-vazio','Manutenção':'s-manutencao'
+  };
+
+  let lista = todasViagens.filter(function(v) {
+    return (v.tipo_frota||'').toUpperCase() === frotaTabAtual;
+  });
+
+  if (q) lista = lista.filter(function(v) {
+    return (v.placa||'').toLowerCase().includes(q) ||
+           (v.motorista||'').toLowerCase().includes(q) ||
+           (v.destino||'').toLowerCase().includes(q) ||
+           (v.cliente||'').toLowerCase().includes(q) ||
+           (v.grupo||'').toLowerCase().includes(q);
+  });
+
+  document.getElementById('frota-count').textContent = lista.length + ' veículos';
+
+  if (!lista.length) {
+    document.getElementById('frota-table').innerHTML = '<div class="loading">Nenhum veículo encontrado.</div>';
+    return;
+  }
+
+  let rows = '';
+  lista.forEach(function(v) {
+    const sc = statusClass[v.status_carga] || 's-vazio';
+    const km = parseFloat(v.km_percorrido)||0;
+    const kmTotal = parseFloat(v.km_total_calculado)||0;
+    const pct = kmTotal > 0 ? Math.min(Math.round(km/kmTotal*100),100) : 0;
+    const progressHtml = kmTotal > 0 ?
+      '<div style="display:flex;align-items:center;gap:6px">' +
+        '<div style="flex:1;height:6px;background:#e5e7eb;border-radius:3px;min-width:60px">' +
+          '<div style="height:100%;width:'+pct+'%;background:#d4a017;border-radius:3px"></div>' +
+        '</div>' +
+        '<span style="font-size:11px;color:#888;white-space:nowrap">'+pct+'%</span>' +
+      '</div>' : '—';
+
+    rows += '<tr>' +
+      '<td><span class="placa-mono">' + v.placa + '</span></td>' +
+      '<td style="font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (v.motorista||'—') + '</td>' +
+      '<td style="font-size:11px;color:#888">' + (v.grupo||'—') + '</td>' +
+      '<td style="font-size:12px">' + (v.cliente||'—') + '</td>' +
+      '<td style="font-size:12px">' + (v.origem||'—') + '</td>' +
+      '<td style="font-size:12px;font-weight:600">' + (v.destino||'—') + '</td>' +
+      '<td><span class="status-badge ' + sc + '">' + (v.status_carga||'—') + '</span></td>' +
+      '<td style="min-width:120px">' + progressHtml + '</td>' +
+      '<td style="font-size:11px;color:#aaa">' + (v.ref_data||'—') + '</td>' +
+    '</tr>';
+  });
+
+  document.getElementById('frota-table').innerHTML =
+    '<table>' +
+    '<thead><tr>' +
+      '<th>Placa</th><th>Motorista</th><th>Grupo</th><th>Cliente</th>' +
+      '<th>Região</th><th>Destino</th><th>Status</th><th>Progresso</th><th>Ref.</th>' +
+    '</tr></thead>' +
+    '<tbody>' + rows + '</tbody>' +
+    '</table>';
+}
+
 function formatarTempo(minutos) {
-  minutos = parseInt(minutos) || 0;
-  if (minutos === 0) return '—';
-  const h = Math.floor(minutos / 60);
-  const m = minutos % 60;
-  return h > 0 ? h + 'h ' + m + 'min' : m + 'min';
+  minutos = parseInt(minutos)||0;
+  if (minutos===0) return '—';
+  const h = Math.floor(minutos/60), m = minutos%60;
+  return h>0 ? h+'h '+m+'min' : m+'min';
 }
 
 function renderTabela(dados) {
-  const sorted = dados.slice().sort(function(a, b) {
-    return ((parseFloat(a[sortCol]) || 0) - (parseFloat(b[sortCol]) || 0)) * sortDir;
+  const sorted = dados.slice().sort(function(a,b) {
+    return ((parseFloat(a[sortCol])||0)-(parseFloat(b[sortCol])||0))*sortDir;
   });
-  const maxExcessos = Math.max.apply(null, dados.map(function(d){ return parseInt(d.excessos)||0; }).concat([1]));
-  const maxMovendo = Math.max.apply(null, dados.map(function(d){ return parseInt(d.minutos_movendo)||0; }).concat([1]));
-  const arrow = function(col) { return sortCol === col ? (sortDir > 0 ? ' ↑' : ' ↓') : ''; };
-  let rows = '';
+  const maxExc = Math.max.apply(null, dados.map(function(d){return parseInt(d.excessos)||0;}).concat([1]));
+  const maxMov = Math.max.apply(null, dados.map(function(d){return parseInt(d.minutos_movendo)||0;}).concat([1]));
+  const arrow = function(col){return sortCol===col?(sortDir>0?'↑':'↓'):'';};
+
+  let rows='';
   sorted.forEach(function(d) {
-    const exc = parseInt(d.excessos)||0;
-    const mov = parseInt(d.minutos_movendo)||0;
-    const par = parseInt(d.minutos_parado)||0;
-    const velMax = parseInt(d.vel_max)||0;
-    const ultimaVel = parseInt(d.ultima_vel)||0;
-    const excPct = Math.round(exc/maxExcessos*100);
-    const movPct = Math.round(mov/maxMovendo*100);
-    const statusHtml = ultimaVel > 5
-      ? '<span class="badge-ok">🟢 ' + ultimaVel + 'km/h</span>'
-      : '<span style="color:#888;font-size:12px">⚫ Parado</span>';
-    rows += '<tr>' +
-      '<td><b>' + d.plate + '</b></td>' +
-      '<td><span class="' + (exc>0?'badge-danger':'badge-ok') + '">' + exc + '</span>' +
-        '<span class="bar"><span class="bar-fill danger" style="width:' + excPct + '%;display:block"></span></span></td>' +
-      '<td>' + formatarTempo(mov) +
-        '<span class="bar"><span class="bar-fill" style="width:' + movPct + '%;display:block"></span></span></td>' +
-      '<td>' + formatarTempo(par) + '</td>' +
-      '<td><b>' + velMax + ' km/h</b></td>' +
-      '<td>' + statusHtml + '</td>' +
-      '</tr>';
+    const exc=parseInt(d.excessos)||0, mov=parseInt(d.minutos_movendo)||0;
+    const par=parseInt(d.minutos_parado)||0, velMax=parseInt(d.vel_max)||0;
+    const ultimaVel=parseInt(d.ultima_vel)||0;
+    rows+='<tr>'+
+      '<td><b>'+d.plate+'</b></td>'+
+      '<td><span class="'+(exc>0?'badge-danger':'badge-ok')+'">'+exc+'</span>'+
+        '<span class="bar"><span class="bar-fill danger" style="width:'+Math.round(exc/maxExc*100)+'%;display:block"></span></span></td>'+
+      '<td>'+formatarTempo(mov)+'<span class="bar"><span class="bar-fill" style="width:'+Math.round(mov/maxMov*100)+'%;display:block"></span></span></td>'+
+      '<td>'+formatarTempo(par)+'</td>'+
+      '<td><b>'+velMax+' km/h</b></td>'+
+      '<td>'+(ultimaVel>5?'<span class="badge-ok">🟢 '+ultimaVel+'km/h</span>':'<span style="color:#888;font-size:12px">⚫ Parado</span>')+'</td>'+
+    '</tr>';
   });
-  document.getElementById('table-container').innerHTML =
-    '<table><thead><tr>' +
-    '<th onclick="sortBy(\'plate\')">Placa' + arrow('plate') + '</th>' +
-    '<th onclick="sortBy(\'excessos\')">⚠️ Excessos' + arrow('excessos') + '</th>' +
-    '<th onclick="sortBy(\'minutos_movendo\')">🟢 Tempo em movimento' + arrow('minutos_movendo') + '</th>' +
-    '<th onclick="sortBy(\'minutos_parado\')">⚫ Tempo parado' + arrow('minutos_parado') + '</th>' +
-    '<th onclick="sortBy(\'vel_max\')">🏎 Vel. max' + arrow('vel_max') + '</th>' +
-    '<th>Status</th>' +
-    '</tr></thead><tbody>' + rows + '</tbody></table>';
+
+  document.getElementById('table-container').innerHTML=
+    '<table><thead><tr>'+
+    '<th onclick="sortBy(\'plate\')">Placa '+arrow('plate')+'</th>'+
+    '<th onclick="sortBy(\'excessos\')">⚠️ Excessos '+arrow('excessos')+'</th>'+
+    '<th onclick="sortBy(\'minutos_movendo\')">🟢 Em movimento '+arrow('minutos_movendo')+'</th>'+
+    '<th onclick="sortBy(\'minutos_parado\')">⚫ Parado '+arrow('minutos_parado')+'</th>'+
+    '<th onclick="sortBy(\'vel_max\')">🏎 Vel. máx '+arrow('vel_max')+'</th>'+
+    '<th>Status</th>'+
+    '</tr></thead><tbody>'+rows+'</tbody></table>';
 }
 
 function sortBy(col) {
-  if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = -1; }
+  if(sortCol===col) sortDir*=-1; else{sortCol=col;sortDir=-1;}
   filtrarTabela();
 }
 
 function filtrarTabela() {
-  const q = document.getElementById('search').value.toLowerCase();
-  renderTabela(dadosOriginais.filter(function(d){ return d.plate.toLowerCase().includes(q); }));
+  const q=document.getElementById('search').value.toLowerCase();
+  renderTabela(dadosOriginais.filter(function(d){return d.plate.toLowerCase().includes(q);}));
 }
 
 carregarDashboard();
+carregarFrota();
+setInterval(carregarFrota, 60000);
 </script>
 </body>
 </html>
