@@ -84,16 +84,31 @@ function popupContent(v) {
   const status = over ? '🔴 Acima do limite' : moving ? '🟢 Em movimento' : '⚪ Parado';
   const updated = v.recorded_at ? new Date(v.recorded_at).toLocaleString('pt-BR') : '—';
   const viagem = viagensMap[v.plate] || {};
+  const km = viagem.km_percorrido || 0;
+  const kmTotal = viagem.km_total_calculado || 0;
+  const pct = kmTotal > 0 ? Math.min(Math.round(km / kmTotal * 100), 100) : 0;
+
   const viagemHtml = viagem.destino ? `
-    <tr><td colspan="2" style="padding-top:6px;border-top:1px solid #eee"></td></tr>
+    <tr><td colspan="2" style="padding-top:8px;border-top:1px solid #eee;font-weight:700;color:#d4a017">📦 Viagem</td></tr>
     <tr><td style="color:#888">Status</td><td>${statusCargaBadge(viagem.status_carga)}</td></tr>
     <tr><td style="color:#888">Origem</td><td><b>${viagem.origem||'—'}</b></td></tr>
     <tr><td style="color:#888">Destino</td><td><b>${viagem.destino||'—'}</b></td></tr>
     <tr><td style="color:#888">Cliente</td><td>${viagem.cliente||'—'}</td></tr>
     <tr><td style="color:#888">Motorista</td><td style="font-size:11px">${viagem.motorista||'—'}</td></tr>
+    ${kmTotal > 0 ? `<tr><td colspan="2">
+      <div style="margin-top:4px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#888;margin-bottom:3px">
+          <span>${km} km percorridos</span><span>${pct}% (${kmTotal} km total)</span>
+        </div>
+        <div style="height:6px;background:#e5e7eb;border-radius:3px">
+          <div style="height:100%;width:${pct}%;background:#d4a017;border-radius:3px"></div>
+        </div>
+      </div>
+    </td></tr>` : ''}
   ` : '';
+
   return `
-    <div style="font-family:sans-serif;font-size:13px;min-width:200px;line-height:1.6">
+    <div style="font-family:sans-serif;font-size:13px;min-width:220px;line-height:1.6">
       <div style="font-size:16px;font-weight:bold;margin-bottom:4px">🚛 ${v.plate}</div>
       <table style="width:100%;border-collapse:collapse">
         <tr><td style="color:#888">Status</td><td><b>${status}</b></td></tr>
@@ -124,15 +139,36 @@ function updateSidebarList(vehicles) {
       const color = over ? '#ef4444' : moving ? '#10b981' : '#6b7280';
       const id = v.vehicle_id || v.vehicleId;
       const viagem = viagensMap[v.plate] || {};
-      const temViagem = viagem.destino || viagem.origem;
+      const km = viagem.km_percorrido || 0;
+      const kmTotal = viagem.km_total_calculado || 0;
+      const pct = kmTotal > 0 ? Math.min(Math.round(km / kmTotal * 100), 100) : 0;
 
-      const viagemHtml = temViagem ? `
-        <div style="margin-top:4px">
-          ${statusCargaBadge(viagem.status_carga)}
+      const statusColors = {
+        'Em Trânsito': '#3b82f6',
+        'Carregar': '#f59e0b',
+        'Carregado': '#8b5cf6',
+        'Ag. Descarga': '#10b981',
+        'Vazio': '#6b7280',
+        'Manutenção': '#ef4444'
+      };
+      const scColor = statusColors[viagem.status_carga] || '#6b7280';
+
+      const viagemHtml = viagem.destino ? `
+        <div style="margin-top:5px;font-size:11px;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          📍 ${viagem.origem||'?'} → <b style="color:#d4a017">${viagem.destino||'?'}</b>
         </div>
-        <div style="font-size:11px;color:#aaa;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-          📍 ${viagem.origem||'?'} → ${viagem.destino||'?'}
+        <div style="margin-top:3px">
+          <span style="background:${scColor}22;color:${scColor};padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700">${viagem.status_carga||''}</span>
         </div>
+        ${kmTotal > 0 ? `
+        <div style="margin-top:5px">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-bottom:2px">
+            <span>${km} km</span><span>${pct}% de ${kmTotal} km</span>
+          </div>
+          <div style="height:4px;background:#333;border-radius:2px">
+            <div style="height:100%;width:${pct}%;background:#d4a017;border-radius:2px;transition:width .3s"></div>
+          </div>
+        </div>` : ''}
       ` : '';
 
       return `
