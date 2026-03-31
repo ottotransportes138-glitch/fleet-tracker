@@ -26,9 +26,19 @@ function truckIcon(color = '#3b82f6', speed = 0) {
 }
 
 const markers = {};
-const routeLines = {};
+let viagensMap = {};
+
+async function loadViagens() {
+  try {
+    const res = await fetch(`${CONFIG.API_URL}/api/viagens`);
+    const viagens = await res.json();
+    viagensMap = {};
+    viagens.forEach(v => { if (v.placa) viagensMap[v.placa] = v; });
+  } catch(e) { console.error('Erro viagens:', e); }
+}
 
 async function loadVehicles() {
+  await loadViagens();
   const res = await fetch(`${CONFIG.API_URL}/api/vehicles`);
   const data = await res.json();
   data.forEach(updateVehicle);
@@ -37,59 +47,63 @@ async function loadVehicles() {
 
 function updateVehicle(v) {
   if (!v.lat || !v.lng) return;
-
-  const over = v.speed > (v.speed_limit || 80);
+  const over = v.speed > (v.speed_limit || 90);
   const moving = v.speed > 0;
   const color = over ? '#ef4444' : moving ? '#10b981' : '#6b7280';
   const id = v.vehicle_id || v.vehicleId;
-
   if (markers[id]) {
     markers[id].setLatLng([v.lat, v.lng]);
     markers[id].setIcon(truckIcon(color, v.speed));
   } else {
     markers[id] = L.marker([v.lat, v.lng], { icon: truckIcon(color, v.speed) })
       .addTo(map)
-      .bindPopup(() => popupContent(v), { maxWidth: 220 });
+      .bindPopup(() => popupContent(v), { maxWidth: 240 });
   }
-
   markers[id]._vehicleData = v;
+  if (markers[id].isPopupOpen()) markers[id].setPopupContent(popupContent(v));
+}
 
-  if (markers[id].isPopupOpen()) {
-    markers[id].setPopupContent(popupContent(v));
-  }
-
-  if (v.route_waypoints && !routeLines[v.route_id]) {
-    const coords = v.route_waypoints.map(wp => [wp.lat, wp.lng]);
-    routeLines[v.route_id] = L.polyline(coords, {
-      color: '#3b82f6', weight: 2, opacity: .6, dashArray: '6 4',
-    }).addTo(map);
-  }
+function statusCargaBadge(sc) {
+  const map = {
+    'Em Trânsito': { bg:'#dbeafe', color:'#1d4ed8' },
+    'Carregar':    { bg:'#fef3c7', color:'#92400e' },
+    'Carregado':   { bg:'#ede9fe', color:'#5b21b6' },
+    'Ag. Descarga':{ bg:'#d1fae5', color:'#065f46' },
+    'Vazio':       { bg:'#f3f4f6', color:'#374151' },
+    'Manutenção':  { bg:'#fee2e2', color:'#991b1b' },
+  };
+  const s = map[sc] || { bg:'#f3f4f6', color:'#374151' };
+  return `<span style="background:${s.bg};color:${s.color};padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700">${sc||'—'}</span>`;
 }
 
 function popupContent(v) {
   const speed = v.speed ?? 0;
-  const limit = v.speed_limit || 80;
+  const limit = v.speed_limit || 90;
   const over = speed > limit;
   const moving = speed > 0;
   const status = over ? '🔴 Acima do limite' : moving ? '🟢 Em movimento' : '⚪ Parado';
   const updated = v.recorded_at ? new Date(v.recorded_at).toLocaleString('pt-BR') : '—';
-
+  const viagem = viagensMap[v.plate] || {};
+  const viagemHtml = viagem.destino ? `
+    <tr><td colspan="2" style="padding-top:6px;border-top:1px solid #eee"></td></tr>
+    <tr><td style="color:#888">Status</td><td>${statusCargaBadge(viagem.status_carga)}</td></tr>
+    <tr><td style="color:#888">Origem</td><td><b>${viagem.origem||'—'}</b></td></tr>
+    <tr><td style="color:#888">Destino</td><td><b>${viagem.destino||'—'}</b></td></tr>
+    <tr><td style="color:#888">Cliente</td><td>${viagem.cliente||'—'}</td></tr>
+    <tr><td style="color:#888">Motorista</td><td style="font-size:11px">${viagem.motorista||'—'}</td></tr>
+  ` : '';
   return `
-    <div style="font-family:sans-serif;font-size:13px;min-width:180px;line-height:1.6">
+    <div style="font-family:sans-serif;font-size:13px;min-width:200px;line-height:1.6">
       <div style="font-size:16px;font-weight:bold;margin-bottom:4px">🚛 ${v.plate}</div>
-      <div style="color:#555;margin-bottom:8px">${v.name || v.plate}</div>
       <table style="width:100%;border-collapse:collapse">
         <tr><td style="color:#888">Status</td><td><b>${status}</b></td></tr>
         <tr><td style="color:#888">Velocidade</td><td><b>${speed} km/h</b> <span style="color:#aaa">(lim: ${limit})</span></td></tr>
-        <tr><td style="color:#888">Rota</td><td>${v.route_name || '—'}</td></tr>
-        <tr><td style="color:#888">Lat/Lng</td><td style="font-size:11px">${Number(v.lat).toFixed(5)}, ${Number(v.lng).toFixed(5)}</td></tr>
         <tr><td style="color:#888">Atualizado</td><td style="font-size:11px">${updated}</td></tr>
+        ${viagemHtml}
       </table>
       <div style="margin-top:8px;text-align:center">
         <a href="https://www.google.com/maps?q=${v.lat},${v.lng}" target="_blank"
-          style="font-size:12px;color:#3b82f6;text-decoration:none">
-          📍 Ver no Google Maps
-        </a>
+          style="font-size:12px;color:#3b82f6;text-decoration:none">📍 Ver no Google Maps</a>
       </div>
     </div>`;
 }
@@ -105,17 +119,30 @@ function updateSidebarList(vehicles) {
     .sort((a, b) => (b.speed || 0) - (a.speed || 0))
     .map(v => {
       const speed = v.speed ?? 0;
-      const over = speed > (v.speed_limit || 80);
+      const over = speed > (v.speed_limit || 90);
       const moving = speed > 0;
       const color = over ? '#ef4444' : moving ? '#10b981' : '#6b7280';
       const id = v.vehicle_id || v.vehicleId;
+      const viagem = viagensMap[v.plate] || {};
+      const temViagem = viagem.destino || viagem.origem;
+
+      const viagemHtml = temViagem ? `
+        <div style="margin-top:4px">
+          ${statusCargaBadge(viagem.status_carga)}
+        </div>
+        <div style="font-size:11px;color:#aaa;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          📍 ${viagem.origem||'?'} → ${viagem.destino||'?'}
+        </div>
+      ` : '';
+
       return `
         <div class="vehicle-item" onclick="focusVehicle('${id}')"
-          style="cursor:pointer;padding:6px 8px;border-bottom:1px solid #eee;display:flex;align-items:center;gap:8px">
-          <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0"></div>
+          style="cursor:pointer;padding:8px;border-bottom:1px solid #222;display:flex;align-items:flex-start;gap:8px">
+          <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;margin-top:3px"></div>
           <div style="flex:1;min-width:0">
             <div style="font-weight:bold;font-size:13px">${v.plate}</div>
             <div style="font-size:11px;color:#888">${speed} km/h ${over ? '⚠️' : ''}</div>
+            ${viagemHtml}
           </div>
         </div>`;
     }).join('');
@@ -134,4 +161,5 @@ window.onPositionsUpdate = function(positions) {
     'Atualizado: ' + new Date().toLocaleTimeString('pt-BR');
 };
 
+setInterval(loadViagens, 60000);
 loadVehicles();
