@@ -119,6 +119,7 @@
 <script>
 let dadosOriginais = [];
 let viagensMap = {};
+let kmMap = {};
 let sortCol = 'excessos';
 let sortDir = -1;
 
@@ -126,13 +127,19 @@ const hoje = new Date();
 document.getElementById('date-start').value = '2026-03-26';
 document.getElementById('date-end').value = hoje.toISOString().slice(0,10);
 
-async function carregarViagens() {
+async function carregarViagens(start, end) {
   try {
-    const res = await fetch(CONFIG.API_URL + '/api/viagens');
-    const viagens = await res.json();
+    const [resV, resKm] = await Promise.all([
+      fetch(CONFIG.API_URL + '/api/viagens'),
+      fetch(CONFIG.API_URL + '/api/omnilink-km/km-todos?start=' + start + '&end=' + end)
+    ]);
+    const viagens = await resV.json();
+    const kms = await resKm.json();
     viagensMap = {};
     viagens.forEach(function(v) { if(v.placa) viagensMap[v.placa] = v; });
-  } catch(e) {}
+    kmMap = {};
+    if (Array.isArray(kms)) kms.forEach(function(k) { kmMap[k.plate] = k.km; });
+  } catch(e) { console.error('carregarViagens erro:', e); }
 }
 
 async function carregarDashboard() {
@@ -143,7 +150,7 @@ async function carregarDashboard() {
   const endLabel = new Date(end+'T12:00:00').toLocaleDateString('pt-BR');
   document.getElementById('table-title').textContent = 'Desempenho por Veículo — ' + startLabel + ' a ' + endLabel;
 
-  await carregarViagens();
+  await carregarViagens(start, end);
 
   try {
     const url = CONFIG.API_URL + '/api/dashboard?start=' + start + '&end=' + end;
