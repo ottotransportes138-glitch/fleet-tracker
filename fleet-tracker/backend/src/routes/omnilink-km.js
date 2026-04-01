@@ -35,22 +35,34 @@ async function soapRequest(action, body) {
   return data;
 }
 
-// Testa ListarRelatorioEstatisticas
+// Testa GerarRelatorioDeCoordenadas
 router.get("/km/:serial", async (req, res) => {
   try {
     const { serial } = req.params;
     const hoje = new Date();
-    const inicio = new Date(hoje);
-    inicio.setDate(1);
-    const dtInicio = inicio.toISOString().slice(0,10) + "T00:00:00";
+    const dtInicio = hoje.toISOString().slice(0,10) + "T00:00:00";
     const dtFim = hoje.toISOString().slice(0,10) + "T23:59:59";
 
-    const xml = await soapRequest("ListarRelatorioEstatisticas",
+    const xml = await soapRequest("GerarRelatorioDeCoordenadas",
       `<Serial>${serial}</Serial>
        <DataInicio>${dtInicio}</DataInicio>
        <DataFim>${dtFim}</DataFim>`
     );
 
+    res.type("xml").send(xml);
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Testa ObtemEventosNormais para ver eventos do veículo
+router.get("/eventos/:serial", async (req, res) => {
+  try {
+    const { serial } = req.params;
+    const xml = await soapRequest("ObtemEventosNormais",
+      `<Serial>${serial}</Serial>
+       <UltimoIDRecebido>0</UltimoIDRecebido>`
+    );
     res.type("xml").send(xml);
   } catch(e) {
     res.status(500).json({ error: e.message });
