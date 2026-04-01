@@ -13,7 +13,7 @@ router.get("/km/:plate", async (req, res) => {
 
     // Busca posições ordenadas por tempo
     const result = await db.query(`
-      SELECT p.latitude, p.longitude, p.recorded_at
+      SELECT p.lat, p.lng, p.recorded_at
       FROM positions p
       JOIN vehicles v ON v.id = p.vehicle_id
       WHERE v.plate = $1
@@ -39,8 +39,8 @@ router.get("/km/:plate", async (req, res) => {
     let totalKm = 0;
     for (let i = 1; i < positions.length; i++) {
       const d = haversine(
-        parseFloat(positions[i-1].latitude), parseFloat(positions[i-1].longitude),
-        parseFloat(positions[i].latitude), parseFloat(positions[i].longitude)
+        parseFloat(positions[i-1].lat), parseFloat(positions[i-1].lng),
+        parseFloat(positions[i].lat), parseFloat(positions[i].lng)
       );
       // Ignora saltos absurdos (> 50km entre pontos = erro GPS)
       if (d < 50) totalKm += d;
@@ -69,7 +69,7 @@ router.get("/km-todos", async (req, res) => {
     const results = [];
     for (const v of vehicles.rows) {
       const result = await db.query(`
-        SELECT latitude, longitude FROM positions
+        SELECT lat, lng FROM positions
         WHERE vehicle_id = $1
           AND recorded_at >= $2::date
           AND recorded_at < ($3::date + interval '1 day')
@@ -80,9 +80,9 @@ router.get("/km-todos", async (req, res) => {
       let km = 0;
       for (let i = 1; i < pts.length; i++) {
         const R = 6371;
-        const dLat = (parseFloat(pts[i].latitude) - parseFloat(pts[i-1].latitude)) * Math.PI / 180;
-        const dLon = (parseFloat(pts[i].longitude) - parseFloat(pts[i-1].longitude)) * Math.PI / 180;
-        const a = Math.sin(dLat/2)**2 + Math.cos(parseFloat(pts[i-1].latitude)*Math.PI/180) * Math.cos(parseFloat(pts[i].latitude)*Math.PI/180) * Math.sin(dLon/2)**2;
+        const dLat = (parseFloat(pts[i].lat) - parseFloat(pts[i-1].lat)) * Math.PI / 180;
+        const dLon = (parseFloat(pts[i].lng) - parseFloat(pts[i-1].lng)) * Math.PI / 180;
+        const a = Math.sin(dLat/2)**2 + Math.cos(parseFloat(pts[i-1].lat)*Math.PI/180) * Math.cos(parseFloat(pts[i].lat)*Math.PI/180) * Math.sin(dLon/2)**2;
         const d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         if (d < 50) km += d;
       }
