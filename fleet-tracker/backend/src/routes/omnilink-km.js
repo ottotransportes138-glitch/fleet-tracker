@@ -1,7 +1,6 @@
 ﻿const express = require("express");
 const axios = require("axios");
 const crypto = require("crypto");
-const db = require("../models/db");
 const router = express.Router();
 
 const WSTT_URL = "https://wstt.omnilink.com.br/iasws/iasws.asmx";
@@ -36,22 +35,23 @@ async function soapRequest(action, body) {
   return data;
 }
 
-// Busca km percorrido via Omnilink para um serial
+// Testa ListarRelatorioEstatisticas
 router.get("/km/:serial", async (req, res) => {
   try {
     const { serial } = req.params;
     const hoje = new Date();
-    const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-    const dtInicio = inicio.toISOString().split('T')[0] + 'T00:00:00';
-    const dtFim = hoje.toISOString().split('T')[0] + 'T23:59:59';
+    const inicio = new Date(hoje);
+    inicio.setDate(1);
+    const dtInicio = inicio.toISOString().slice(0,10) + "T00:00:00";
+    const dtFim = hoje.toISOString().slice(0,10) + "T23:59:59";
 
-    const xml = await soapRequest("ObtemHistoricoViagem",
+    const xml = await soapRequest("ListarRelatorioEstatisticas",
       `<Serial>${serial}</Serial>
        <DataInicio>${dtInicio}</DataInicio>
        <DataFim>${dtFim}</DataFim>`
     );
 
-    res.send(xml);
+    res.type("xml").send(xml);
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
