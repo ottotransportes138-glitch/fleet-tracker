@@ -118,14 +118,22 @@
 <script src="../js/config.js"></script>
 <script>
 let dadosOriginais = [];
+let viagensMap = {};
 let sortCol = 'excessos';
 let sortDir = -1;
-let frotaTabAtual = 'RODOTREM';
-let todasViagens = [];
 
 const hoje = new Date();
 document.getElementById('date-start').value = '2026-03-26';
 document.getElementById('date-end').value = hoje.toISOString().slice(0,10);
+
+async function carregarViagens() {
+  try {
+    const res = await fetch(CONFIG.API_URL + '/api/viagens');
+    const viagens = await res.json();
+    viagensMap = {};
+    viagens.forEach(function(v) { if(v.placa) viagensMap[v.placa] = v; });
+  } catch(e) {}
+}
 
 async function carregarDashboard() {
   document.getElementById('table-container').innerHTML = '<div class="loading">Carregando...</div>';
@@ -134,6 +142,8 @@ async function carregarDashboard() {
   const startLabel = new Date(start+'T12:00:00').toLocaleDateString('pt-BR');
   const endLabel = new Date(end+'T12:00:00').toLocaleDateString('pt-BR');
   document.getElementById('table-title').textContent = 'Desempenho por Veículo — ' + startLabel + ' a ' + endLabel;
+
+  await carregarViagens();
 
   try {
     const url = CONFIG.API_URL + '/api/dashboard?start=' + start + '&end=' + end;
@@ -158,89 +168,6 @@ async function carregarDashboard() {
   }
 }
 
-async function carregarFrota() {
-  try {
-    const res = await fetch(CONFIG.API_URL + '/api/viagens');
-    todasViagens = await res.json();
-    renderFrota();
-  } catch(e) {
-    document.getElementById('frota-table').innerHTML = '<div class="loading" style="color:#ef4444">Erro ao carregar frota.</div>';
-  }
-}
-
-function setFrotaTab(tab) {
-  frotaTabAtual = tab;
-  document.querySelectorAll('.frota-tab').forEach(b => b.classList.remove('active'));
-  document.getElementById('ft-' + tab).classList.add('active');
-  document.getElementById('frota-search').value = '';
-  renderFrota();
-}
-
-function filtrarFrota() { renderFrota(); }
-
-function renderFrota() {
-  const q = document.getElementById('frota-search').value.toLowerCase();
-  const statusClass = {
-    'Em Trânsito':'s-transito','Carregar':'s-carregar','Carregado':'s-carregado',
-    'Ag. Descarga':'s-descarga','Vazio':'s-vazio','Manutenção':'s-manutencao'
-  };
-
-  let lista = todasViagens.filter(function(v) {
-    return (v.tipo_frota||'').toUpperCase() === frotaTabAtual;
-  });
-
-  if (q) lista = lista.filter(function(v) {
-    return (v.placa||'').toLowerCase().includes(q) ||
-           (v.motorista||'').toLowerCase().includes(q) ||
-           (v.destino||'').toLowerCase().includes(q) ||
-           (v.cliente||'').toLowerCase().includes(q) ||
-           (v.grupo||'').toLowerCase().includes(q);
-  });
-
-  document.getElementById('frota-count').textContent = lista.length + ' veículos';
-
-  if (!lista.length) {
-    document.getElementById('frota-table').innerHTML = '<div class="loading">Nenhum veículo encontrado.</div>';
-    return;
-  }
-
-  let rows = '';
-  lista.forEach(function(v) {
-    const sc = statusClass[v.status_carga] || 's-vazio';
-    const km = parseFloat(v.km_percorrido)||0;
-    const kmTotal = parseFloat(v.km_total_calculado)||0;
-    const pct = kmTotal > 0 ? Math.min(Math.round(km/kmTotal*100),100) : 0;
-    const progressHtml = kmTotal > 0 ?
-      '<div style="display:flex;align-items:center;gap:6px">' +
-        '<div style="flex:1;height:6px;background:#e5e7eb;border-radius:3px;min-width:60px">' +
-          '<div style="height:100%;width:'+pct+'%;background:#d4a017;border-radius:3px"></div>' +
-        '</div>' +
-        '<span style="font-size:11px;color:#888;white-space:nowrap">'+pct+'%</span>' +
-      '</div>' : '—';
-
-    rows += '<tr>' +
-      '<td><span class="placa-mono">' + v.placa + '</span></td>' +
-      '<td style="font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (v.motorista||'—') + '</td>' +
-      '<td style="font-size:11px;color:#888">' + (v.grupo||'—') + '</td>' +
-      '<td style="font-size:12px">' + (v.cliente||'—') + '</td>' +
-      '<td style="font-size:12px">' + (v.origem||'—') + '</td>' +
-      '<td style="font-size:12px;font-weight:600">' + (v.destino||'—') + '</td>' +
-      '<td><span class="status-badge ' + sc + '">' + (v.status_carga||'—') + '</span></td>' +
-      '<td style="min-width:120px">' + progressHtml + '</td>' +
-      '<td style="font-size:11px;color:#aaa">' + (v.ref_data||'—') + '</td>' +
-    '</tr>';
-  });
-
-  document.getElementById('frota-table').innerHTML =
-    '<table>' +
-    '<thead><tr>' +
-      '<th>Placa</th><th>Motorista</th><th>Grupo</th><th>Cliente</th>' +
-      '<th>Região</th><th>Destino</th><th>Status</th><th>Progresso</th><th>Ref.</th>' +
-    '</tr></thead>' +
-    '<tbody>' + rows + '</tbody>' +
-    '</table>';
-}
-
 function formatarTempo(minutos) {
   minutos = parseInt(minutos)||0;
   if (minutos===0) return '—';
@@ -258,9 +185,26 @@ function renderTabela(dados) {
 
   let rows='';
   sorted.forEach(function(d) {
-    const exc=parseInt(d.excessos)||0, mov=parseInt(d.minutos_movendo)||0;
-    const par=parseInt(d.minutos_parado)||0, velMax=parseInt(d.vel_max)||0;
+    const exc=parseInt(d.excessos)||0;
+    const mov=parseInt(d.minutos_movendo)||0;
+    const par=parseInt(d.minutos_parado)||0;
+    const velMax=parseInt(d.vel_max)||0;
     const ultimaVel=parseInt(d.ultima_vel)||0;
+
+    // Busca km percorrido da viagem
+    const viagem = viagensMap[d.plate] || {};
+    const km = parseFloat(viagem.km_percorrido)||0;
+    const kmTotal = parseFloat(viagem.km_total_calculado)||0;
+    const pct = kmTotal > 0 ? Math.min(Math.round(km/kmTotal*100),100) : 0;
+    const kmHtml = km > 0
+      ? '<div style="display:flex;align-items:center;gap:6px">'+
+          '<span style="font-size:12px;font-weight:600">'+km+' km</span>'+
+          (kmTotal > 0 ? '<div style="width:60px;height:5px;background:#e5e7eb;border-radius:3px">'+
+            '<div style="height:100%;width:'+pct+'%;background:#d4a017;border-radius:3px"></div></div>'+
+            '<span style="font-size:10px;color:#888">'+pct+'%</span>' : '')+
+        '</div>'
+      : '<span style="color:#aaa;font-size:12px">—</span>';
+
     rows+='<tr>'+
       '<td><b>'+d.plate+'</b></td>'+
       '<td><span class="'+(exc>0?'badge-danger':'badge-ok')+'">'+exc+'</span>'+
@@ -268,6 +212,7 @@ function renderTabela(dados) {
       '<td>'+formatarTempo(mov)+'<span class="bar"><span class="bar-fill" style="width:'+Math.round(mov/maxMov*100)+'%;display:block"></span></span></td>'+
       '<td>'+formatarTempo(par)+'</td>'+
       '<td><b>'+velMax+' km/h</b></td>'+
+      '<td>'+kmHtml+'</td>'+
       '<td>'+(ultimaVel>5?'<span class="badge-ok">🟢 '+ultimaVel+'km/h</span>':'<span style="color:#888;font-size:12px">⚫ Parado</span>')+'</td>'+
     '</tr>';
   });
@@ -279,6 +224,7 @@ function renderTabela(dados) {
     '<th onclick="sortBy(\'minutos_movendo\')">🟢 Em movimento '+arrow('minutos_movendo')+'</th>'+
     '<th onclick="sortBy(\'minutos_parado\')">⚫ Parado '+arrow('minutos_parado')+'</th>'+
     '<th onclick="sortBy(\'vel_max\')">🏎 Vel. máx '+arrow('vel_max')+'</th>'+
+    '<th>📍 Km Percorrido</th>'+
     '<th>Status</th>'+
     '</tr></thead><tbody>'+rows+'</tbody></table>';
 }
