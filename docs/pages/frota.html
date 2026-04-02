@@ -231,6 +231,13 @@ function renderTabela() {
 
 carregar();
 setInterval(carregar, 60000);
+
+// Abre aba pelo parametro da URL
+const urlParams = new URLSearchParams(window.location.search);
+const tipoParam = urlParams.get("tipo");
+if (tipoParam && ["RODOTREM","LS","TODOS"].includes(tipoParam)) {
+  setTab(tipoParam);
+}
 </script>
 </body>
 </html>
