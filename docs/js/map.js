@@ -205,9 +205,52 @@ function updateSidebarList(vehicles) {
   }).join('');
 }
 
+let rotaLayer = null;
+
 function focusVehicle(id) {
   const m = markers[id];
-  if (m) { map.setView(m.getLatLng(), 15); m.openPopup(); }
+  if (!m) return;
+  map.setView(m.getLatLng(), 13);
+  m.openPopup();
+
+  // Remove rota anterior
+  if (rotaLayer) { map.removeLayer(rotaLayer); rotaLayer = null; }
+
+  // Busca viagem do veiculo
+  const v = m._vehicleData;
+  if (!v) return;
+  const viagem = viagensMap[v.plate];
+  if (!viagem || !viagem.id) return;
+
+  // Traça rota OSRM
+  fetch(CONFIG.API_URL + "/api/rotas/rota/" + viagem.id)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.geometry) return;
+      const coords = data.geometry.coordinates.map(c => [c[1], c[0]]);
+      rotaLayer = L.polyline(coords, {
+        color: "#d4a017",
+        weight: 4,
+        opacity: 0.8,
+        dashArray: "8,4"
+      }).addTo(map);
+
+      // Marcador de destino
+      if (coords.length > 0) {
+        const dest = coords[coords.length - 1];
+        L.marker(dest, {
+          icon: L.divIcon({
+            html: `<div style="background:#d4a017;color:#111;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;white-space:nowrap">🏁 ${data.destino||"Destino"}</div>`,
+            className: "",
+            iconAnchor: [40, 10]
+          })
+        }).addTo(map);
+      }
+
+      // Ajusta zoom para ver rota inteira
+      map.fitBounds(rotaLayer.getBounds(), { padding: [40, 40] });
+    })
+    .catch(e => console.error("Erro rota:", e));
 }
 
 window.onPositionsUpdate = function(positions) {
