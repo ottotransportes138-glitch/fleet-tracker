@@ -63,7 +63,7 @@ body {
   text-transform: uppercase;
 }
 
-.nav-links { padding: 8px 0; border-bottom: 1px solid #333; }
+.nav-links { padding: 8px 0; border-bottom: 1px solid #333; overflow-y: auto; }
 
 .nav-links a {
   display: flex;
