@@ -82,6 +82,8 @@ router.post("/upload", async (req, res) => {
         const destino = v.Destino || v.destino || '';
         const cliente = v.Cliente || v.cliente || '';
         const regiao = v['Regiao'] || v['Região'] || v.regiao || '';
+        const origemExcel = v['Origem'] || v['origem'] || '';
+        const origemExcel = v['Origem'] || v['origem'] || '';
         const grupo = v.Grupo || v.grupo || '';
         const tipoFrota = v['Tipo Frota'] || v.tipo_frota || '';
         const ref = v['Ref.'] || v.ref || '';
@@ -109,9 +111,9 @@ router.post("/upload", async (req, res) => {
         // $1  $2     $3        $4      $5       $6       $7            $8     $9       $10         $11      $12           $13        $14        $15       $16
         await db.query(`
           INSERT INTO viagens
-            (vehicle_id, placa, motorista, origem, destino, cliente, status_carga, grupo, ref_data, tipo_frota, km_total, km_total_calculado, lat_origem, lng_origem, lat_destino, lng_destino)
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$11,$12,$13,$14,$15)
-        `, [vehicleId, placa, motorista, regiao, destino, cliente, status, grupo, ref, tipoFrota, kmTotal, latOrigem, lngOrigem, latDestino, lngDestino]);
+            (vehicle_id, placa, motorista, origem, destino, cliente, status_carga, grupo, ref_data, tipo_frota, km_total, km_total_calculado, lat_origem, lng_origem, lat_destino, lng_destino, origem_excel)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$11,$12,$13,$14,$15,$16)
+        `, [vehicleId, placa, motorista, regiao, destino, cliente, status, grupo, ref, tipoFrota, kmTotal, latOrigem, lngOrigem, latDestino, lngDestino, origemExcel]);
 
         importadas++;
         console.log("[IMPORT]", placa, tipoFrota, destino);
