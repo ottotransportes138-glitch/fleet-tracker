@@ -83,7 +83,6 @@ router.post("/upload", async (req, res) => {
         const cliente = v.Cliente || v.cliente || '';
         const regiao = v['Regiao'] || v['Região'] || v.regiao || '';
         const origemExcel = v['Origem'] || v['origem'] || '';
-        const origemExcel = v['Origem'] || v['origem'] || '';
         const grupo = v.Grupo || v.grupo || '';
         const tipoFrota = v['Tipo Frota'] || v.tipo_frota || '';
         const ref = v['Ref.'] || v.ref || '';
