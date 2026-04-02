@@ -104,6 +104,19 @@
 
   <div class="search-bar">
     <input class="search-input" id="search" placeholder="🔍 Buscar placa, motorista ou destino..." oninput="filtrar()"/>
+    <select id="filtro-regiao" onchange="filtrar()" style="border:1px solid #ddd;border-radius:4px;padding:6px 10px;font-size:12px;background:#fff;cursor:pointer">
+    <option value="">Todas as regiões</option>
+    <option value="São Paulo">São Paulo</option>
+    <option value="Rio de Janeiro">Rio de Janeiro</option>
+    <option value="Goiás">Goiás</option>
+    <option value="Minas Gerais">Minas Gerais</option>
+    <option value="Mato Grosso do Sul">Mato Grosso do Sul</option>
+    <option value="Sorocaba">Sorocaba</option>
+    <option value="Astolfo Dutra">Astolfo Dutra</option>
+    <option value="Feira de Santana BA">Feira de Santana BA</option>
+    <option value="Imperatriz MA">Imperatriz MA</option>
+    <option value="São Luís MA">São Luís MA</option>
+  </select>
     <button class="filter-btn active" data-filtro="todos" onclick="setFiltro(this)">Todos</button>
     <button class="filter-btn" data-filtro="Em Trânsito" onclick="setFiltro(this)">🔵 Trânsito</button>
     <button class="filter-btn" data-filtro="Carregar" onclick="setFiltro(this)">🟡 Carregar</button>
@@ -121,7 +134,7 @@
           <th>Motorista</th>
           <th>Grupo</th>
           <th>Cliente</th>
-          <th>Origem</th>
+          <th>Região</th>
           <th>Destino</th>
           <th>Status</th>
           <th>Ref.</th>
