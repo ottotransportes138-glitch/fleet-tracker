@@ -113,7 +113,7 @@ let sortCol = 'excessos';
 let sortDir = -1;
 
 const hoje = new Date();
-document.getElementById('date-start').value = '2026-03-26';
+document.getElementById('date-start').value = hoje.toISOString().slice(0,10);
 document.getElementById('date-end').value = hoje.toISOString().slice(0,10);
 
 async function carregarViagens(start, end) {
