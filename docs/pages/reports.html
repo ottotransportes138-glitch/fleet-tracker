@@ -120,7 +120,7 @@ async function carregarViagens(start, end) {
   try {
     const [resV, resKm] = await Promise.all([
       fetch(CONFIG.API_URL + '/api/viagens'),
-      fetch(CONFIG.API_URL + '/api/omnilink-km/km-todos?start=' + start + '&end=' + end)
+      fetch(CONFIG.API_URL + '/api/omnilink-km/hodometro-km-todos?start=' + start + '&end=' + end)
     ]);
     const viagens = await resV.json();
     const kms = await resKm.json();
