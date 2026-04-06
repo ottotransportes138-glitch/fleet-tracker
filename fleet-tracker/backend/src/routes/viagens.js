@@ -26,9 +26,21 @@ function distanciaKm(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-async function calcularKmPercorrido(vehicleId, criadoEm) {
+async function calcularKmPercorrido(vehicleId, criadoEm, odometroInicio) {
   if (!vehicleId) return 0;
   try {
+    // Usa hodometro se disponivel
+    if (odometroInicio && odometroInicio > 0) {
+      const { rows } = await db.query(
+        "SELECT odometer FROM positions WHERE vehicle_id=$1 AND odometer > 0 ORDER BY recorded_at DESC LIMIT 1",
+        [vehicleId]
+      );
+      if (rows.length > 0 && rows[0].odometer > 0) {
+        const km = Math.round((rows[0].odometer - odometroInicio) / 1000 * 10) / 10;
+        return km > 0 ? km : 0;
+      }
+    }
+    // Fallback GPS
     const { rows } = await db.query(
       "SELECT lat, lng FROM positions WHERE vehicle_id=$1 AND recorded_at>=$2 ORDER BY recorded_at ASC",
       [vehicleId, criadoEm]
@@ -55,7 +67,7 @@ router.get("/", async (req, res) => {
       ORDER BY v.criado_em DESC
     `);
     const result = await Promise.all(rows.map(async (v) => {
-      const km = await calcularKmPercorrido(v.vehicle_id, v.criado_em);
+      const km = await calcularKmPercorrido(v.vehicle_id, v.criado_em, v.odometro_inicio);
       const pct = v.km_total_calculado > 0 ? Math.min(Math.round(km/v.km_total_calculado*100), 100) : 0;
       return { ...v, km_percorrido: km, progresso_pct: pct };
     }));
