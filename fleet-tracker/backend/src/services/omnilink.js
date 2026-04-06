@@ -50,6 +50,7 @@ async function syncOmnilink() {
       const speed = parseInt(decoded.match(/<VEL>(.*?)<\/VEL>/)?.[1] || "0");
       const heading = parseInt(decoded.match(/<DIR>(.*?)<\/DIR>/)?.[1] || "0");
       const recordedAt = decoded.match(/<DATA>(.*?)<\/DATA>/)?.[1]?.trim() || new Date().toISOString();
+      const odometer = parseInt(decoded.match(/<ODOMETER>(.*?)<\/ODOMETER>/)?.[1] || '0');
 
       if (!lat || !lng) continue;
 
@@ -67,8 +68,8 @@ async function syncOmnilink() {
 
       // Salva no banco
       await db.query(
-        "INSERT INTO positions (vehicle_id, lat, lng, speed, heading, recorded_at) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING",
-        [vehicle.id, lat, lng, speed, heading, new Date(recordedAt)]
+        "INSERT INTO positions (vehicle_id, lat, lng, speed, heading, recorded_at, odometer) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT DO NOTHING",
+        [vehicle.id, lat, lng, speed, heading, new Date(recordedAt), odometer]
       );
 
       positions.push({
