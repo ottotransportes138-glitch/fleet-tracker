@@ -188,17 +188,9 @@ function renderTabela(dados) {
     const ultimaVel=parseInt(d.ultima_vel)||0;
 
     // Busca km percorrido da viagem
-    const viagem = viagensMap[d.plate] || {};
-    const km = parseFloat(viagem.km_percorrido)||0;
-    const kmTotal = parseFloat(viagem.km_total_calculado)||0;
-    const pct = kmTotal > 0 ? Math.min(Math.round(km/kmTotal*100),100) : 0;
-    const kmHtml = km > 0
-      ? '<div style="display:flex;align-items:center;gap:6px">'+
-          '<span style="font-size:12px;font-weight:600">'+km+' km</span>'+
-          (kmTotal > 0 ? '<div style="width:60px;height:5px;background:#e5e7eb;border-radius:3px">'+
-            '<div style="height:100%;width:'+pct+'%;background:#d4a017;border-radius:3px"></div></div>'+
-            '<span style="font-size:10px;color:#888">'+pct+'%</span>' : '')+
-        '</div>'
+    const kmReal = (typeof kmMap !== 'undefined' && kmMap[d.plate]) ? kmMap[d.plate] : 0;
+    const kmHtml = kmReal > 0
+      ? '<span style="font-size:13px;font-weight:700;color:#111">'+kmReal+' km</span>'
       : '<span style="color:#aaa;font-size:12px">—</span>';
 
     rows+='<tr>'+
