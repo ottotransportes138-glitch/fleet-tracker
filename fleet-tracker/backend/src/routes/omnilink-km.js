@@ -1,20 +1,64 @@
 ﻿const express = require("express");
-const db = require("../models/db");
+const axios = require("axios");
+const crypto = require("crypto");
 const router = express.Router();
 
-// Calcula km percorrido pelo histórico GPS do nosso banco
+const WSTT_URL = "https://wstt.omnilink.com.br/iasws/iasws.asmx";
+const USER = process.env.OMNILINK_USER;
+const PASS = process.env.OMNILINK_PASSWORD;
+
+async function soapRequest(action, body) {
+  const msgId = "urn:uuid:" + crypto.randomUUID();
+  const soap = `<?xml version="1.0" encoding="utf-8"?>
+<soap-env:Envelope xmlns:soap-env="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap-env:Header xmlns:wsa="http://www.w3.org/2005/08/addressing">
+    <wsa:Action>http://microsoft.com/webservices/IASWSSoap/${action}Request</wsa:Action>
+    <wsa:MessageID>${msgId}</wsa:MessageID>
+    <wsa:To>${WSTT_URL}</wsa:To>
+  </soap-env:Header>
+  <soap-env:Body>
+    <ns0:${action} xmlns:ns0="http://microsoft.com/webservices/">
+      <Usuario>${USER}</Usuario>
+      <Senha>${PASS}</Senha>
+      ${body}
+    </ns0:${action}>
+  </soap-env:Body>
+</soap-env:Envelope>`;
+
+  const { data } = await axios.post(WSTT_URL, soap, {
+    headers: {
+      "Content-Type": "text/xml; charset=utf-8",
+      "SOAPAction": `http://microsoft.com/webservices/IASWSSoap/${action}Request`
+    },
+    timeout: 15000
+  });
+  return data;
+}
+
+// Testa ObtemPosicaoAtual para ver campos disponíveis incluindo hodometro
+router.get("/hodometro/:serial", async (req, res) => {
+  try {
+    const { serial } = req.params;
+    const xml = await soapRequest("ObtemPosicaoAtual",
+      `<Serial>${serial}</Serial>`
+    );
+    res.type("xml").send(xml);
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Km por GPS do banco
 router.get("/km/:plate", async (req, res) => {
   try {
+    const db = require("../models/db");
     const { plate } = req.params;
     const { start, end } = req.query;
-
     const startDate = start || new Date(new Date().setDate(1)).toISOString().slice(0,10);
     const endDate = end || new Date().toISOString().slice(0,10);
 
-    // Busca posições ordenadas por tempo
     const result = await db.query(`
-      SELECT p.lat, p.lng, p.recorded_at
-      FROM positions p
+      SELECT p.lat, p.lng FROM positions p
       JOIN vehicles v ON v.id = p.vehicle_id
       WHERE v.plate = $1
         AND p.recorded_at >= $2::date
@@ -22,50 +66,31 @@ router.get("/km/:plate", async (req, res) => {
       ORDER BY p.recorded_at ASC
     `, [plate, startDate, endDate]);
 
-    const positions = result.rows;
-    if (positions.length < 2) {
-      return res.json({ plate, km: 0, pontos: positions.length });
-    }
-
-    // Haversine
-    function haversine(lat1, lon1, lat2, lon2) {
+    const pts = result.rows;
+    let km = 0;
+    for (let i = 1; i < pts.length; i++) {
       const R = 6371;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const dLat = (parseFloat(pts[i].lat) - parseFloat(pts[i-1].lat)) * Math.PI / 180;
+      const dLon = (parseFloat(pts[i].lng) - parseFloat(pts[i-1].lng)) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(parseFloat(pts[i-1].lat)*Math.PI/180) * Math.cos(parseFloat(pts[i].lat)*Math.PI/180) * Math.sin(dLon/2)**2;
+      const d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      if (d < 50) km += d;
     }
-
-    let totalKm = 0;
-    for (let i = 1; i < positions.length; i++) {
-      const d = haversine(
-        parseFloat(positions[i-1].lat), parseFloat(positions[i-1].lng),
-        parseFloat(positions[i].lat), parseFloat(positions[i].lng)
-      );
-      // Ignora saltos absurdos (> 50km entre pontos = erro GPS)
-      if (d < 50) totalKm += d;
-    }
-
-    res.json({
-      plate,
-      km: Math.round(totalKm * 10) / 10,
-      pontos: positions.length,
-      periodo: { start: startDate, end: endDate }
-    });
+    res.json({ plate, km: Math.round(km*10)/10, pontos: pts.length, periodo: { start: startDate, end: endDate } });
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// Km de todos os veículos no período
+// Km de todos os veículos
 router.get("/km-todos", async (req, res) => {
   try {
+    const db = require("../models/db");
     const { start, end } = req.query;
     const startDate = start || new Date(new Date().setDate(1)).toISOString().slice(0,10);
     const endDate = end || new Date().toISOString().slice(0,10);
 
     const vehicles = await db.query("SELECT id, plate FROM vehicles WHERE active = true ORDER BY plate");
-
     const results = [];
     for (const v of vehicles.rows) {
       const result = await db.query(`
@@ -75,7 +100,6 @@ router.get("/km-todos", async (req, res) => {
           AND recorded_at < ($3::date + interval '1 day')
         ORDER BY recorded_at ASC
       `, [v.id, startDate, endDate]);
-
       const pts = result.rows;
       let km = 0;
       for (let i = 1; i < pts.length; i++) {
@@ -86,9 +110,8 @@ router.get("/km-todos", async (req, res) => {
         const d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         if (d < 50) km += d;
       }
-      results.push({ plate: v.plate, km: Math.round(km * 10) / 10, pontos: pts.length });
+      results.push({ plate: v.plate, km: Math.round(km*10)/10, pontos: pts.length });
     }
-
     res.json(results);
   } catch(e) {
     res.status(500).json({ error: e.message });
