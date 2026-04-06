@@ -36,6 +36,10 @@ app.get("/health", (_, res) => res.json({ status: "ok" }));
 wss.on("connection", (ws) => { ws.isAlive = true; ws.on("pong", () => { ws.isAlive = true; }); });
 setInterval(() => { wss.clients.forEach((ws) => { if (!ws.isAlive) return ws.terminate(); ws.isAlive = false; ws.ping(); }); }, 30000);
 cron.schedule("*/15 * * * * *", async () => { try { const positions = await syncOmnilink(); const alerts = await checkAlerts(positions); broadcast({ type: "positions", data: positions }); if (alerts.length > 0) broadcast({ type: "alerts", data: alerts }); } catch (err) { console.error("[CRON] Erro:", err.message); } });
+// Verifica saida da origem a cada 2 minutos
+setInterval(verificarSaidaOrigem, 2 * 60 * 1000);
+verificarSaidaOrigem();
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => { console.log("Fleet Tracker rodando na porta " + PORT); });
 
