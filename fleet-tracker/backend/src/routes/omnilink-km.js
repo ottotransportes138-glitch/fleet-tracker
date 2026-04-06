@@ -48,6 +48,83 @@ router.get("/hodometro/:serial", async (req, res) => {
   }
 });
 
+// Km por HODOMETRO real da Omnilink
+router.get('/hodometro-km/:plate', async (req, res) => {
+  try {
+    const db = require('../models/db');
+    const { plate } = req.params;
+    const { start, end } = req.query;
+    const startDate = start || new Date(new Date().setDate(1)).toISOString().slice(0,10);
+    const endDate = end || new Date().toISOString().slice(0,10);
+
+    // Pega primeiro e ultimo odometro do periodo
+    const result = await db.query(
+      SELECT p.odometer, p.recorded_at
+      FROM positions p
+      JOIN vehicles v ON v.id = p.vehicle_id
+      WHERE v.plate = 
+        AND p.odometer > 0
+        AND p.recorded_at >= ::date
+        AND p.recorded_at < (::date + interval '1 day')
+      ORDER BY p.recorded_at ASC
+    , [plate, startDate, endDate]);
+
+    if (result.rows.length < 2) {
+      return res.json({ plate, km: 0, pontos: result.rows.length, metodo: 'hodometro' });
+    }
+
+    const primeiro = result.rows[0];
+    const ultimo = result.rows[result.rows.length - 1];
+    const kmPercorrido = Math.round((ultimo.odometer - primeiro.odometer) / 1000 * 10) / 10;
+
+    res.json({
+      plate,
+      km: kmPercorrido > 0 ? kmPercorrido : 0,
+      odometro_inicio: Math.round(primeiro.odometer / 1000),
+      odometro_fim: Math.round(ultimo.odometer / 1000),
+      pontos: result.rows.length,
+      periodo: { start: startDate, end: endDate },
+      metodo: 'hodometro'
+    });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Km hodometro todos os veiculos
+router.get('/hodometro-km-todos', async (req, res) => {
+  try {
+    const db = require('../models/db');
+    const { start, end } = req.query;
+    const startDate = start || new Date(new Date().setDate(1)).toISOString().slice(0,10);
+    const endDate = end || new Date().toISOString().slice(0,10);
+
+    const result = await db.query(
+      SELECT v.plate,
+        MIN(p.odometer) FILTER (WHERE p.odometer > 0) as odo_inicio,
+        MAX(p.odometer) FILTER (WHERE p.odometer > 0) as odo_fim,
+        COUNT(*) as pontos
+      FROM positions p
+      JOIN vehicles v ON v.id = p.vehicle_id
+      WHERE p.odometer > 0
+        AND p.recorded_at >= ::date
+        AND p.recorded_at < (::date + interval '1 day')
+      GROUP BY v.plate
+      ORDER BY v.plate
+    , [startDate, endDate]);
+
+    const dados = result.rows.map(r => ({
+      plate: r.plate,
+      km: r.odo_fim && r.odo_inicio ? Math.round((r.odo_fim - r.odo_inicio) / 1000 * 10) / 10 : 0,
+      pontos: parseInt(r.pontos)
+    })).filter(r => r.km >= 0);
+
+    res.json(dados);
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Km por GPS do banco
 router.get("/km/:plate", async (req, res) => {
   try {
