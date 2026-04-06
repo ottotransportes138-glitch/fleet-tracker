@@ -7,6 +7,7 @@ const cron = require("node-cron");
 const vehiclesRouter = require("./src/routes/vehicles");
 const routesRouter = require("./src/routes/routes");
 const alertsRouter = require("./src/routes/alerts");
+const { verificarSaidaOrigem } = require("./src/services/saida-origem");
 const rotasRouter = require("./src/routes/rotas");
 const omnilinkKmRouter = require("./src/routes/omnilink-km");
 const geocodeRouter = require("./src/routes/geocode");
