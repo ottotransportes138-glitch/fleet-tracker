@@ -1,0 +1,277 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Otto GR — Configurações</title>
+<link rel="stylesheet" href="../css/main.css"/>
+<style>
+  .page { flex:1; padding:20px; overflow-y:auto; background:#f5f5f5; }
+  .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .page-header h1 { font-size:18px; font-weight:700; color:#111; }
+
+  .config-card { background:#fff; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.08); overflow:hidden; }
+  .tab-bar { display:flex; border-bottom:2px solid #d4a017; }
+  .tab-btn { padding:12px 28px; font-size:13px; font-weight:700; color:#888; background:transparent; border:none; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; transition:.15s; }
+  .tab-btn.active { color:#111; border-bottom-color:#d4a017; }
+  .tab-btn:hover { color:#d4a017; }
+  .tab-content { display:none; padding:24px; }
+  .tab-content.active { display:block; }
+
+  .section-title { font-size:14px; font-weight:700; color:#111; margin-bottom:16px; padding-bottom:8px; border-bottom:1px solid #eee; }
+  .btn-add { background:#111; color:#d4a017; border:none; border-radius:6px; padding:8px 16px; font-size:12px; font-weight:700; cursor:pointer; }
+  .btn-add:hover { background:#222; }
+  .btn-danger { background:#fee2e2; color:#dc2626; border:none; border-radius:4px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer; }
+  .btn-edit { background:#f3f4f6; color:#111; border:none; border-radius:4px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer; }
+
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { background:#111; color:#d4a017; padding:10px 12px; text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; }
+  td { padding:10px 12px; border-bottom:1px solid #f0f0f0; }
+  tr:hover td { background:#fffbf0; }
+
+  .badge-admin { background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:700; }
+  .badge-user { background:#dbeafe; color:#1d4ed8; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:700; }
+  .badge-ativo { background:#d1fae5; color:#065f46; padding:2px 8px; border-radius:10px; font-size:11px; }
+  .badge-inativo { background:#fee2e2; color:#991b1b; padding:2px 8px; border-radius:10px; font-size:11px; }
+
+  .perm-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+  .perm-card { background:#f9f9f9; border-radius:8px; padding:16px; border:1px solid #eee; }
+  .perm-card h3 { font-size:13px; font-weight:700; color:#111; margin-bottom:12px; }
+  .perm-item { display:flex; align-items:center; justify-content:space-between; padding:6px 0; border-bottom:1px solid #eee; font-size:12px; color:#555; }
+  .perm-item:last-child { border-bottom:none; }
+  .toggle { position:relative; display:inline-block; width:36px; height:20px; }
+  .toggle input { opacity:0; width:0; height:0; }
+  .slider { position:absolute; cursor:pointer; inset:0; background:#ccc; border-radius:20px; transition:.3s; }
+  .slider:before { position:absolute; content:""; height:14px; width:14px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:.3s; }
+  input:checked + .slider { background:#d4a017; }
+  input:checked + .slider:before { transform:translateX(16px); }
+
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:#fff; border-radius:8px; padding:24px; width:400px; max-width:95vw; }
+  .modal h3 { font-size:15px; font-weight:700; margin-bottom:16px; }
+  .form-group { margin-bottom:12px; }
+  .form-label { font-size:12px; color:#555; font-weight:600; display:block; margin-bottom:4px; }
+  .form-input { width:100%; border:1px solid #ddd; border-radius:4px; padding:8px 10px; font-size:13px; }
+  .form-input:focus { outline:none; border-color:#d4a017; }
+  .modal-footer { display:flex; gap:8px; justify-content:flex-end; margin-top:16px; }
+  .btn-save { background:#d4a017; color:#111; border:none; border-radius:4px; padding:8px 20px; font-size:13px; font-weight:700; cursor:pointer; }
+  .btn-cancel { background:#f3f4f6; color:#555; border:none; border-radius:4px; padding:8px 16px; font-size:13px; cursor:pointer; }
+</style>
+</head>
+<body>
+<script>if(sessionStorage.getItem("ottogrLogado")!=="true"){window.location.href="../index.html";}</script>
+<nav class="sidebar">
+  <div class="logo">
+    <img src="../img/logo.jpg" alt="Otto GR" onerror="this.style.display='none'"/>
+    <div class="logo-name">Otto Gerenciadora de Risco</div>
+  </div>
+  <nav class="nav-links">
+    <a href="index.html">🗺 Mapa ao vivo</a>
+    <a href="routes.html">🛣 Rotas</a>
+    <a href="vehicles.html">🚛 Veículos</a>
+    <a href="frota.html?tipo=RODOTREM">🚛 Rodotrem</a>
+    <a href="frota.html?tipo=LS">🚚 LS</a>
+    <a href="viagens.html">📦 Viagens</a>
+    <a href="alerts.html">⚠️ Alertas</a>
+    <a href="reports.html">📊 Dashboard</a>
+  </nav>
+  <div style="margin-top:auto;position:relative">
+    <div class="gear-menu" id="gear-menu">
+      <a href="config.html" class="active">⚙️ Configurações</a>
+      <a href="#" onclick="abrirConta()">👤 Conta</a>
+      <a href="../index.html" onclick="sessionStorage.removeItem('ottogrLogado')">🚪 Sair</a>
+    </div>
+    <button class="gear-btn" onclick="toggleGear()">
+      <span class="gear-icon">⚙️</span>
+      <span>Configurações</span>
+    </button>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <h1>⚙️ Configurações</h1>
+  </div>
+
+  <div class="config-card">
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="setTab('usuarios')">👥 Usuários</button>
+      <button class="tab-btn" onclick="setTab('permissoes')">🔒 Permissões</button>
+    </div>
+
+    <!-- ABA USUARIOS -->
+    <div class="tab-content active" id="tab-usuarios">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div class="section-title" style="margin:0;border:none">Usuários do Sistema</div>
+        <button class="btn-add" onclick="abrirModalUsuario()">+ Novo Usuário</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Usuário</th>
+            <th>Perfil</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tabela-usuarios">
+          <tr>
+            <td>Administrador</td>
+            <td>adm</td>
+            <td><span class="badge-admin">Administrador</span></td>
+            <td><span class="badge-ativo">Ativo</span></td>
+            <td>
+              <button class="btn-edit" onclick="editarUsuario('adm')">✏️ Editar</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ABA PERMISSOES -->
+    <div class="tab-content" id="tab-permissoes">
+      <div class="section-title">Permissões por Perfil</div>
+      <div class="perm-grid">
+        <div class="perm-card">
+          <h3>👑 Administrador</h3>
+          <div class="perm-item"><span>Mapa ao vivo</span><label class="toggle"><input type="checkbox" checked disabled><span class="slider"></span></label></div>
+          <div class="perm-item"><span>Rotas</span><label class="toggle"><input type="checkbox" checked disabled><span class="slider"></span></label></div>
+          <div class="perm-item"><span>Veículos</span><label class="toggle"><input type="checkbox" checked disabled><span class="slider"></span></label></div>
+          <div class="perm-item"><span>Viagens</span><label class="toggle"><input type="checkbox" checked disabled><span class="slider"></span></label></div>
+          <div class="perm-item"><span>Frota</span><label class="toggle"><input type="checkbox" checked disabled><span class="slider"></span></label></div>
+          <div class="perm-item"><span>Alertas</span><label class="toggle"><input type="checkbox" checked disabled><span class="slider"></span></label></div>
+          <div class="perm-item"><span>Dashboard</span><label class="toggle"><input type="checkbox" checked disabled><span class="slider"></span></label></div>
+          <div class="perm-item"><span>Configurações</span><label class="toggle"><input type="checkbox" checked disabled><span class="slider"></span></label></div>
+        </div>
+        <div class="perm-card">
+          <h3>👤 Usuário</h3>
+          <div class="perm-item"><span>Mapa ao vivo</span><label class="toggle"><input type="checkbox" checked><span class="slider"></span></label></div>
+          <div class="perm-item"><span>Rotas</span><label class="toggle"><input type="checkbox" checked><span class="slider"></span></label></div>
+          <div class="perm-item"><span>Veículos</span><label class="toggle"><input type="checkbox"><span class="slider"></span></label></div>
+          <div class="perm-item"><span>Viagens</span><label class="toggle"><input type="checkbox" checked><span class="slider"></span></label></div>
+          <div class="perm-item"><span>Frota</span><label class="toggle"><input type="checkbox" checked><span class="slider"></span></label></div>
+          <div class="perm-item"><span>Alertas</span><label class="toggle"><input type="checkbox" checked><span class="slider"></span></label></div>
+          <div class="perm-item"><span>Dashboard</span><label class="toggle"><input type="checkbox"><span class="slider"></span></label></div>
+          <div class="perm-item"><span>Configurações</span><label class="toggle"><input type="checkbox"><span class="slider"></span></label></div>
+        </div>
+      </div>
+      <div style="margin-top:16px;text-align:right">
+        <button class="btn-save" onclick="salvarPermissoes()">💾 Salvar Permissões</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal novo usuario -->
+<div class="modal-overlay" id="modal-usuario">
+  <div class="modal">
+    <h3>👤 Novo Usuário</h3>
+    <div class="form-group">
+      <label class="form-label">Nome completo</label>
+      <input class="form-input" id="u-nome" placeholder="Ex: João Silva"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Usuário</label>
+      <input class="form-input" id="u-usuario" placeholder="Ex: joao"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Senha</label>
+      <input class="form-input" type="password" id="u-senha" placeholder="Mínimo 6 caracteres"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Perfil</label>
+      <select class="form-input" id="u-perfil">
+        <option value="usuario">Usuário</option>
+        <option value="admin">Administrador</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-save" onclick="salvarUsuario()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function setTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(function(b,i) {
+    b.classList.remove('active');
+    if ((i===0&&tab==='usuarios')||(i===1&&tab==='permissoes')) b.classList.add('active');
+  });
+  document.getElementById('tab-usuarios').classList.remove('active');
+  document.getElementById('tab-permissoes').classList.remove('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+// Usuarios salvos localmente
+let usuarios = JSON.parse(localStorage.getItem('ottogr-usuarios') || '[]');
+
+function renderUsuarios() {
+  const tbody = document.getElementById('tabela-usuarios');
+  let rows = '<tr><td>Administrador</td><td>adm</td><td><span class="badge-admin">Administrador</span></td><td><span class="badge-ativo">Ativo</span></td><td><button class="btn-edit">✏️ Editar</button></td></tr>';
+  usuarios.forEach(function(u, i) {
+    rows += '<tr>' +
+      '<td>' + u.nome + '</td>' +
+      '<td>' + u.usuario + '</td>' +
+      '<td><span class="badge-' + (u.perfil==='admin'?'admin':'user') + '">' + (u.perfil==='admin'?'Administrador':'Usuário') + '</span></td>' +
+      '<td><span class="badge-ativo">Ativo</span></td>' +
+      '<td><button class="btn-edit" onclick="editarUsuario(' + i + ')">✏️ Editar</button> <button class="btn-danger" onclick="removerUsuario(' + i + ')">🗑️</button></td>' +
+    '</tr>';
+  });
+  tbody.innerHTML = rows;
+}
+
+function abrirModalUsuario() {
+  document.getElementById('u-nome').value = '';
+  document.getElementById('u-usuario').value = '';
+  document.getElementById('u-senha').value = '';
+  document.getElementById('modal-usuario').classList.add('open');
+}
+
+function fecharModal() {
+  document.getElementById('modal-usuario').classList.remove('open');
+}
+
+function salvarUsuario() {
+  const nome = document.getElementById('u-nome').value.trim();
+  const usuario = document.getElementById('u-usuario').value.trim();
+  const senha = document.getElementById('u-senha').value;
+  const perfil = document.getElementById('u-perfil').value;
+  if (!nome || !usuario || !senha) { alert('Preencha todos os campos!'); return; }
+  if (senha.length < 6) { alert('Senha deve ter no mínimo 6 caracteres!'); return; }
+  usuarios.push({ nome, usuario, senha, perfil });
+  localStorage.setItem('ottogr-usuarios', JSON.stringify(usuarios));
+  renderUsuarios();
+  fecharModal();
+}
+
+function removerUsuario(i) {
+  if (confirm('Remover usuário?')) {
+    usuarios.splice(i, 1);
+    localStorage.setItem('ottogr-usuarios', JSON.stringify(usuarios));
+    renderUsuarios();
+  }
+}
+
+function editarUsuario(id) {
+  alert('Edição em desenvolvimento.');
+}
+
+function salvarPermissoes() {
+  alert('Permissões salvas!');
+}
+
+function toggleGear() {
+  document.getElementById('gear-menu').classList.toggle('open');
+}
+
+function abrirConta() {
+  alert('Usuário: adm\nPerfil: Administrador');
+}
+
+renderUsuarios();
+</script>
+</body>
+</html>
