@@ -1,34 +1,56 @@
 ﻿const axios = require("axios");
+const https = require("https");
 const db = require("../models/db");
 
 const VERTICE_URL = "https://monittora.vertticegr.com.br:1515";
 const VERTICE_LOGIN = "70534428100";
 const VERTICE_SENHA = "1031go";
+const agent = new https.Agent({ rejectUnauthorized: false });
 
 let cookieSession = null;
 
 async function loginVertice() {
   try {
+    // Pega pagina de login para obter token CSRF e cookie
+    const loginPage = await axios.get(VERTICE_URL + "/Login", {
+      httpsAgent: agent, timeout: 15000
+    });
+
+    // Extrai token CSRF
+    const tokenMatch = loginPage.data.match(/name="__RequestVerificationToken"[^>]+value="([^"]+)"/);
+    const token = tokenMatch ? tokenMatch[1] : "";
+
+    // Pega cookies da pagina de login
+    const loginCookies = (loginPage.headers["set-cookie"] || []).map(c => c.split(";")[0]).join("; ");
+
+    // Faz o login
     const params = new URLSearchParams();
-    params.append("Login", VERTICE_LOGIN);
-    params.append("Senha", VERTICE_SENHA);
+    params.append("UserName", VERTICE_LOGIN);
+    params.append("UserPassword", VERTICE_SENHA);
+    params.append("__RequestVerificationToken", token);
 
     const res = await axios.post(VERTICE_URL + "/Login", params, {
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      maxRedirects: 0,
-      validateStatus: s => s < 400,
-      httpsAgent: new (require("https").Agent)({ rejectUnauthorized: false }),
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Cookie": loginCookies,
+        "Referer": VERTICE_URL + "/Login"
+      },
+      httpsAgent: agent,
+      maxRedirects: 5,
+      validateStatus: s => s < 500,
       timeout: 15000
     });
 
-    const cookies = res.headers["set-cookie"];
-    if (cookies) {
-      cookieSession = cookies.map(c => c.split(";")[0]).join("; ");
-      global._verticeCookie = cookieSession;
-      console.log("[VERTICE] Login OK");
-      return true;
-    }
-    return false;
+    // Pega cookies da resposta
+    const resCookies = (res.headers["set-cookie"] || []).map(c => c.split(";")[0]);
+    const allCookies = [...loginCookies.split("; "), ...resCookies].filter(Boolean);
+    cookieSession = allCookies.join("; ");
+    global._verticeCookie = cookieSession;
+
+    // Verifica se login foi bem sucedido
+    const loggedIn = res.data && !res.data.includes("Informe suas credenciais");
+    console.log("[VERTICE] Login:", loggedIn ? "OK" : "FALHOU");
+    return loggedIn;
   } catch(e) {
     console.error("[VERTICE] Erro login:", e.message);
     return false;
@@ -44,29 +66,34 @@ async function buscarSMs() {
 
     const res = await axios.get(VERTICE_URL + "/Viagem/Index", {
       headers: { "Cookie": cookieSession },
-      httpsAgent: new (require("https").Agent)({ rejectUnauthorized: false }),
+      httpsAgent: agent,
       timeout: 15000
     });
 
-    // Extrai dados do HTML usando regex
+    // Verifica se ainda esta logado
+    if (res.data.includes("Informe suas credenciais")) {
+      console.log("[VERTICE] Sessao expirada, refazendo login...");
+      cookieSession = null;
+      const ok = await loginVertice();
+      if (!ok) return [];
+      return buscarSMs();
+    }
+
     const html = res.data;
     const sms = [];
-
-    // Busca linhas da tabela
     const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
-    const cellRegex = /<td[^>]*>([\s\S]*?)<\/td>/gi;
-    const stripHtml = s => s.replace(/<[^>]+>/g, "").trim();
+    const stripHtml = s => s.replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
 
     let rowMatch;
     while ((rowMatch = rowRegex.exec(html)) !== null) {
       const rowHtml = rowMatch[1];
       const cells = [];
+      const cellRegex = /<td[^>]*>([\s\S]*?)<\/td>/gi;
       let cellMatch;
-      const cellRegex2 = /<td[^>]*>([\s\S]*?)<\/td>/gi;
-      while ((cellMatch = cellRegex2.exec(rowHtml)) !== null) {
+      while ((cellMatch = cellRegex.exec(rowHtml)) !== null) {
         cells.push(stripHtml(cellMatch[1]));
       }
-      if (cells.length >= 4) {
+      if (cells.length >= 4 && cells[0] && cells[0] !== "") {
         sms.push({
           id: cells[0] || "",
           veiculo: cells[1] || "",
