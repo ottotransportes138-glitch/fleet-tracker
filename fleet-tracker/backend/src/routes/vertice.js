@@ -5,8 +5,10 @@ const router = express.Router();
 // Testa conexao e lista SMs
 router.get("/testar", async (req, res) => {
   try {
+    const ok = await loginVertice();
+    if (!ok) return res.json({ erro: "Login falhou" });
     const sms = await buscarSMs();
-    res.json({ ok: true, total: sms.length, sms: sms.slice(0, 5) });
+    res.json({ ok: true, loginOk: ok, total: sms.length, sms: sms.slice(0, 5) });
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
