@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "fleet-tracker-backend",
   "version": "1.0.0",
   "description": "Backend do sistema de rastreamento de frota Omnilink",
@@ -8,17 +8,18 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
+    "axios": "^1.7.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-rate-limit": "^7.3.1",
+    "geolib": "^3.3.4",
     "jsonwebtoken": "^9.0.2",
     "node-cron": "^3.0.3",
     "pg": "^8.12.0",
-    "ws": "^8.17.1",
-    "axios": "^1.7.2",
-    "geolib": "^3.3.4",
-    "soap": "^0.45.0"
+    "puppeteer-core": "^24.40.0",
+    "soap": "^0.45.0",
+    "ws": "^8.17.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.4"
