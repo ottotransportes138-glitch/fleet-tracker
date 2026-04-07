@@ -12,6 +12,31 @@ router.get("/testar", async (req, res) => {
   }
 });
 
+// Debug - retorna HTML bruto
+router.get("/debug-html", async (req, res) => {
+  try {
+    const { loginVertice } = require("../services/vertice");
+    const axios = require("axios");
+    await loginVertice();
+    
+    // Importa o cookie da sessao
+    const verticeModule = require("../services/vertice");
+    const sms = await verticeModule.buscarSMs();
+    
+    // Faz request manual para ver HTML
+    const https = require("https");
+    const cookieRes = await axios.get("https://monittora.vertticegr.com.br:1515/Viagem/Index", {
+      headers: { "Cookie": global._verticeCookie || "" },
+      httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+      timeout: 15000
+    });
+    
+    res.send("<pre>" + cookieRes.data.substring(0, 5000) + "</pre>");
+  } catch(e) {
+    res.status(500).send("Erro: " + e.message);
+  }
+});
+
 // Importa SMs da Vertice
 router.post("/importar", async (req, res) => {
   try {

@@ -24,6 +24,7 @@ async function loginVertice() {
     const cookies = res.headers["set-cookie"];
     if (cookies) {
       cookieSession = cookies.map(c => c.split(";")[0]).join("; ");
+      global._verticeCookie = cookieSession;
       console.log("[VERTICE] Login OK");
       return true;
     }
