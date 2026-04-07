@@ -82,8 +82,18 @@ async function buscarSMs() {
     const hoje = new Date();
     const inicio = new Date(hoje);
     inicio.setDate(inicio.getDate() - 30);
-    const formatDate = d => d.toLocaleDateString("pt-BR") + " 00:00:00";
-    const formatDateFim = d => d.toLocaleDateString("pt-BR") + " 23:59:59";
+    const formatDate = d => {
+      const dd = String(d.getDate()).padStart(2,"0");
+      const mm = String(d.getMonth()+1).padStart(2,"0");
+      const yyyy = d.getFullYear();
+      return dd + "/" + mm + "/" + yyyy + " 00:00:00";
+    };
+    const formatDateFim = d => {
+      const dd = String(d.getDate()).padStart(2,"0");
+      const mm = String(d.getMonth()+1).padStart(2,"0");
+      const yyyy = d.getFullYear();
+      return dd + "/" + mm + "/" + yyyy + " 23:59:59";
+    };
 
     const params = new URLSearchParams({
       sEcho: "1", iColumns: "13",
