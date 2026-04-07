@@ -75,6 +75,17 @@
     <a href="alerts.html">⚠️ Alertas</a>
     <a href="reports.html">📊 Dashboard</a>
   </nav>
+  <div style="margin-top:auto;position:relative">
+    <div class="gear-menu" id="gear-menu">
+      <a href="#" onclick="abrirConfiguracoes()">⚙️ Configurações</a>
+      <a href="#" onclick="abrirConta()">👤 Conta</a>
+      <a href="../index.html" onclick="sessionStorage.removeItem('ottogrLogado')">🚪 Sair</a>
+    </div>
+    <button class="gear-btn" onclick="toggleGear()">
+      <span class="gear-icon">⚙️</span>
+      <span>Configurações</span>
+    </button>
+  </div>
 </nav>
 
 <div class="page">
@@ -244,6 +255,25 @@ const tipoParam = urlParams.get("tipo");
 if (tipoParam && ["RODOTREM","LS","TODOS"].includes(tipoParam)) {
   setTab(tipoParam);
 }
+</script>
+<script>
+function toggleGear() {
+  document.getElementById("gear-menu").classList.toggle("open");
+}
+function abrirConfiguracoes() {
+  alert("Configurações em desenvolvimento.");
+  document.getElementById("gear-menu").classList.remove("open");
+}
+function abrirConta() {
+  alert("Usuário: adm\nPerfil: Administrador");
+  document.getElementById("gear-menu").classList.remove("open");
+}
+document.addEventListener("click", function(e) {
+  const gear = document.getElementById("gear-menu");
+  if (gear && !e.target.closest(".gear-btn") && !e.target.closest(".gear-menu")) {
+    gear.classList.remove("open");
+  }
+});
 </script>
 </body>
 </html>
