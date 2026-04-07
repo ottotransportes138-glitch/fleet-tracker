@@ -150,7 +150,9 @@ async function buscarSMs() {
     });
 
     console.log("[VERTICE] Chamando CarregarGridViagem...");
-    const res = await axios.get(VERTICE_URL + "/Viagem/CarregarGridViagem?" + params.toString(), {
+    let res;
+    try {
+      res = await axios.get(VERTICE_URL + "/Viagem/CarregarGridViagem?" + params.toString(), {
       headers: {
         "Cookie": getCookieString(),
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
