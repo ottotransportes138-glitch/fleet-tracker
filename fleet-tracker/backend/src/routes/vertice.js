@@ -76,6 +76,47 @@ router.get("/debug-login-old", async (req, res) => {
   }
 });
 
+// Debug CarregarGridViagem
+router.get("/debug-grid", async (req, res) => {
+  try {
+    const axios = require("axios");
+    const https = require("https");
+    const agent = new https.Agent({ rejectUnauthorized: false });
+    
+    const cookie = "_ga=GA1.1.691159619.1775585728; .AspNetCore.Antiforgery.pJiKq-HQ3Kg=CfDJ8OUVtuHuOOJAq9TxHtEnGB4FQrdi-8K1V--UkgzHFq1ppn6lbvVaxz1mWBEHgzcEv36O_B3_aUHm7aS5sIMv1us3ZsI2YNum3GvbGPKE_nwXTCETLm_DeoHJzqa-buf9VTGTueJEozqMbvS-0c5nYUc; .AspNetCore.Session=CfDJ8OUVtuHuOOJAq9TxHtEnGB4vkNvBfxCTh4QBJk5T39UQU7ThyC3BMFwLoYd2gI80cIg663UFodryPcDHLwuKsxzM4TMDxSPe%2FdM0w7xpP6ufPRiODzmDdR4uV2mwQMkDP54NWkYc0cgC2QRTYI8N4aClyMyoLQrW%2BArHlU0%2BVzxj; kt_aside_menu_wrapperst=0";
+
+    const hoje = new Date();
+    const inicio = "01/04/2026 00:00:00";
+    const fim = hoje.toLocaleDateString("pt-BR") + " 23:59:59";
+
+    const params = new URLSearchParams({
+      sEcho: "1",
+      iColumns: "13",
+      sColumns: "",
+      iDisplayStart: "0",
+      iDisplayLength: "100",
+      sSearch: "",
+      bRegex: "false",
+      INICIO: inicio,
+      FIM: fim
+    });
+
+    const r = await axios.get("https://monittora.vertticegr.com.br:1515/Viagem/CarregarGridViagem?" + params.toString(), {
+      headers: { 
+        "Cookie": cookie, 
+        "User-Agent": "Mozilla/5.0",
+        "X-Requested-With": "XMLHttpRequest"
+      },
+      httpsAgent: agent,
+      timeout: 15000
+    });
+    
+    res.json(r.data);
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Debug tabela viagens
 router.get("/debug-tabela", async (req, res) => {
   try {
