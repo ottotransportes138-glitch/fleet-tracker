@@ -76,6 +76,32 @@ router.get("/debug-login-old", async (req, res) => {
   }
 });
 
+// Debug - retorna HTML da pagina de viagens
+router.get("/debug-viagens", async (req, res) => {
+  try {
+    const { loginVertice } = require("../services/vertice");
+    const axios = require("axios");
+    const https = require("https");
+    const agent = new https.Agent({ rejectUnauthorized: false });
+    
+    await loginVertice();
+    const cookie = global._verticeCookie || "";
+    
+    const res2 = await axios.get("https://monittora.vertticegr.com.br:1515/Viagem/Index", {
+      headers: { "Cookie": cookie },
+      httpsAgent: agent,
+      timeout: 15000
+    });
+    
+    // Mostra primeiros 8000 chars do HTML
+    const html = res2.data;
+    const logado = !html.includes("Informe suas credenciais");
+    res.send("<p>Logado: " + logado + "</p><p>Tamanho HTML: " + html.length + "</p><pre>" + html.substring(0, 8000).replace(/</g,"&lt;") + "</pre>");
+  } catch(e) {
+    res.status(500).send("Erro: " + e.message);
+  }
+});
+
 // Debug - retorna HTML bruto
 router.get("/debug-html", async (req, res) => {
   try {
