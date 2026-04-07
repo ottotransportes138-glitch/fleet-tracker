@@ -178,7 +178,7 @@
     </div>
     <div class="form-group">
       <label class="form-label">Senha</label>
-      <input class="form-input" type="password" id="u-senha" placeholder="Mínimo 6 caracteres"/>
+      <input class="form-input" type="password" id="u-senha" placeholder="Mínimo 3 caracteres"/>
     </div>
     <div class="form-group">
       <label class="form-label">Perfil</label>
@@ -240,7 +240,7 @@ function salvarUsuario() {
   const senha = document.getElementById('u-senha').value;
   const perfil = document.getElementById('u-perfil').value;
   if (!nome || !usuario || !senha) { alert('Preencha todos os campos!'); return; }
-  if (senha.length < 6) { alert('Senha deve ter no mínimo 6 caracteres!'); return; }
+  if (senha.length < 3) { alert('Senha deve ter no Mínimo 3 caracteres!'); return; }
   usuarios.push({ nome, usuario, senha, perfil, primeiroAcesso: true });
   localStorage.setItem('ottogr-usuarios', JSON.stringify(usuarios));
   renderUsuarios();
