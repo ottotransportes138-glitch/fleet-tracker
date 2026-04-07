@@ -76,6 +76,31 @@ router.get("/debug-login-old", async (req, res) => {
   }
 });
 
+// Debug com cookie manual
+router.get("/debug-cookie", async (req, res) => {
+  try {
+    const axios = require("axios");
+    const https = require("https");
+    const agent = new https.Agent({ rejectUnauthorized: false });
+    
+    const cookie = "_ga=GA1.1.691159619.1775585728; .AspNetCore.Antiforgery.pJiKq-HQ3Kg=CfDJ8OUVtuHuOOJAq9TxHtEnGB4FQrdi-8K1V--UkgzHFq1ppn6lbvVaxz1mWBEHgzcEv36O_B3_aUHm7aS5sIMv1us3ZsI2YNum3GvbGPKE_nwXTCETLm_DeoHJzqa-buf9VTGTueJEozqMbvS-0c5nYUc; .AspNetCore.Session=CfDJ8OUVtuHuOOJAq9TxHtEnGB4vkNvBfxCTh4QBJk5T39UQU7ThyC3BMFwLoYd2gI80cIg663UFodryPcDHLwuKsxzM4TMDxSPe%2FdM0w7xpP6ufPRiODzmDdR4uV2mwQMkDP54NWkYc0cgC2QRTYI8N4aClyMyoLQrW%2BArHlU0%2BVzxj; kt_aside_menu_wrapperst=0";
+    
+    const r = await axios.get("https://monittora.vertticegr.com.br:1515/Viagem/Index", {
+      headers: { 
+        "Cookie": cookie,
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      },
+      httpsAgent: agent,
+      timeout: 15000
+    });
+    
+    const logado = !r.data.includes("Informe suas credenciais");
+    res.send("<p>Logado: " + logado + " | Tamanho: " + r.data.length + "</p><pre>" + r.data.substring(0, 10000).replace(/</g,"&lt;") + "</pre>");
+  } catch(e) {
+    res.status(500).send("Erro: " + e.message);
+  }
+});
+
 // Debug - retorna HTML da pagina de viagens
 router.get("/debug-viagens", async (req, res) => {
   try {
