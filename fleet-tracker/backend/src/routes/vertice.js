@@ -119,6 +119,24 @@ router.get("/debug-grid", async (req, res) => {
   }
 });
 
+// Debug general.js
+router.get("/debug-generaljs", async (req, res) => {
+  try {
+    const axios = require("axios");
+    const https = require("https");
+    const agent = new https.Agent({ rejectUnauthorized: false });
+    
+    const r = await axios.get("https://monittora.vertticegr.com.br:1515/assets/js/custom/authentication/sign-in/general.js", {
+      httpsAgent: agent, timeout: 10000,
+      validateStatus: s => s < 500
+    });
+    
+    res.send("<pre>" + r.data + "</pre>");
+  } catch(e) {
+    res.status(500).send("Erro: " + e.message);
+  }
+});
+
 // Debug tabela viagens
 router.get("/debug-tabela", async (req, res) => {
   try {
