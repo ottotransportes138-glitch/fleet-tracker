@@ -7,49 +7,71 @@ const VERTICE_LOGIN = "70534428100";
 const VERTICE_SENHA = "1031go";
 const agent = new https.Agent({ rejectUnauthorized: false });
 
-let cookieSession = null;
+let cookieJar = {};
+
+function getCookieString() {
+  return Object.entries(cookieJar).map(([k,v]) => k + "=" + v).join("; ");
+}
+
+function parseCookies(setCookieHeaders) {
+  if (!setCookieHeaders) return;
+  const headers = Array.isArray(setCookieHeaders) ? setCookieHeaders : [setCookieHeaders];
+  headers.forEach(function(cookie) {
+    const part = cookie.split(";")[0];
+    const idx = part.indexOf("=");
+    if (idx > 0) {
+      const key = part.substring(0, idx).trim();
+      const val = part.substring(idx + 1).trim();
+      cookieJar[key] = val;
+    }
+  });
+}
 
 async function loginVertice() {
   try {
-    // Pega pagina de login para obter token CSRF e cookie
+    cookieJar = {};
+
+    // Passo 1: GET na pagina de login para pegar cookies e token CSRF
     const loginPage = await axios.get(VERTICE_URL + "/Login", {
-      httpsAgent: agent, timeout: 15000
+      httpsAgent: agent,
+      timeout: 15000,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      }
     });
+    parseCookies(loginPage.headers["set-cookie"]);
 
     // Extrai token CSRF
     const tokenMatch = loginPage.data.match(/name="__RequestVerificationToken"[^>]+value="([^"]+)"/);
     const token = tokenMatch ? tokenMatch[1] : "";
+    console.log("[VERTICE] Token CSRF:", token ? "OK" : "NAO ENCONTRADO");
 
-    // Pega cookies da pagina de login
-    const loginCookies = (loginPage.headers["set-cookie"] || []).map(c => c.split(";")[0]).join("; ");
-
-    // Faz o login
+    // Passo 2: POST com credenciais
     const params = new URLSearchParams();
     params.append("UserName", VERTICE_LOGIN);
     params.append("UserPassword", VERTICE_SENHA);
     params.append("__RequestVerificationToken", token);
 
-    const res = await axios.post(VERTICE_URL + "/Login", params, {
+    const postRes = await axios.post(VERTICE_URL + "/Login", params, {
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
-        "Cookie": loginCookies,
-        "Referer": VERTICE_URL + "/Login"
+        "Cookie": getCookieString(),
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Referer": VERTICE_URL + "/Login",
+        "Origin": VERTICE_URL
       },
       httpsAgent: agent,
-      maxRedirects: 5,
+      maxRedirects: 10,
       validateStatus: s => s < 500,
       timeout: 15000
     });
 
-    // Pega cookies da resposta
-    const resCookies = (res.headers["set-cookie"] || []).map(c => c.split(";")[0]);
-    const allCookies = [...loginCookies.split("; "), ...resCookies].filter(Boolean);
-    cookieSession = allCookies.join("; ");
-    global._verticeCookie = cookieSession;
+    parseCookies(postRes.headers["set-cookie"]);
+    global._verticeCookie = getCookieString();
 
-    // Verifica se login foi bem sucedido
-    const loggedIn = res.data && !res.data.includes("Informe suas credenciais");
+    const loggedIn = postRes.data && !postRes.data.includes("Informe suas credenciais") && !postRes.data.includes("Bem Vindo (a)");
     console.log("[VERTICE] Login:", loggedIn ? "OK" : "FALHOU");
+    console.log("[VERTICE] Cookies:", Object.keys(cookieJar).join(", "));
     return loggedIn;
   } catch(e) {
     console.error("[VERTICE] Erro login:", e.message);
@@ -59,21 +81,26 @@ async function loginVertice() {
 
 async function buscarSMs() {
   try {
-    if (!cookieSession) {
+    if (!getCookieString().includes("AspNetCore.Session")) {
       const ok = await loginVertice();
       if (!ok) return [];
     }
 
     const res = await axios.get(VERTICE_URL + "/Viagem/Index", {
-      headers: { "Cookie": cookieSession },
+      headers: {
+        "Cookie": getCookieString(),
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      },
       httpsAgent: agent,
-      timeout: 15000
+      timeout: 15000,
+      maxRedirects: 5
     });
 
-    // Verifica se ainda esta logado
-    if (res.data.includes("Informe suas credenciais")) {
+    parseCookies(res.headers["set-cookie"]);
+
+    if (res.data.includes("Informe suas credenciais") || res.data.includes("Bem Vindo (a)")) {
       console.log("[VERTICE] Sessao expirada, refazendo login...");
-      cookieSession = null;
+      cookieJar = {};
       const ok = await loginVertice();
       if (!ok) return [];
       return buscarSMs();
@@ -81,19 +108,20 @@ async function buscarSMs() {
 
     const html = res.data;
     const sms = [];
-    const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
     const stripHtml = s => s.replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
+    const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
 
     let rowMatch;
     while ((rowMatch = rowRegex.exec(html)) !== null) {
       const rowHtml = rowMatch[1];
+      if (!rowHtml.includes("<td")) continue;
       const cells = [];
       const cellRegex = /<td[^>]*>([\s\S]*?)<\/td>/gi;
       let cellMatch;
       while ((cellMatch = cellRegex.exec(rowHtml)) !== null) {
         cells.push(stripHtml(cellMatch[1]));
       }
-      if (cells.length >= 4 && cells[0] && cells[0] !== "") {
+      if (cells.length >= 4 && cells[0] && cells[0].match(/\d+/)) {
         sms.push({
           id: cells[0] || "",
           veiculo: cells[1] || "",
@@ -109,7 +137,6 @@ async function buscarSMs() {
     return sms;
   } catch(e) {
     console.error("[VERTICE] Erro buscarSMs:", e.message);
-    cookieSession = null;
     return [];
   }
 }
