@@ -45,6 +45,7 @@ async function loginVertice() {
     params.append("UserPassword", VERTICE_SENHA);
     params.append("__RequestVerificationToken", token);
 
+    // POST sem seguir redirect para capturar cookies
     const postRes = await axios.post(VERTICE_URL + "/Login", params, {
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -54,12 +55,31 @@ async function loginVertice() {
         "Origin": VERTICE_URL
       },
       httpsAgent: agent,
-      maxRedirects: 10,
-      validateStatus: s => s < 500,
+      maxRedirects: 0,
+      validateStatus: s => s < 400,
       timeout: 15000
     });
 
     parseCookies(postRes.headers["set-cookie"]);
+    console.log("[VERTICE] POST status:", postRes.status);
+    console.log("[VERTICE] Location:", postRes.headers.location);
+    console.log("[VERTICE] Set-Cookie:", postRes.headers["set-cookie"]);
+
+    // Se redirecionou com sucesso, pega cookies do redirect
+    if (postRes.status === 302 && postRes.headers.location) {
+      const redirectRes = await axios.get(VERTICE_URL + postRes.headers.location, {
+        headers: {
+          "Cookie": getCookieString(),
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        },
+        httpsAgent: agent,
+        maxRedirects: 0,
+        validateStatus: s => s < 400,
+        timeout: 15000
+      });
+      parseCookies(redirectRes.headers["set-cookie"]);
+      console.log("[VERTICE] Redirect cookies:", redirectRes.headers["set-cookie"]);
+    }
     global._verticeCookie = getCookieString();
 
     const loggedIn = !postRes.data.includes("Informe suas credenciais") && !postRes.data.includes("Bem Vindo (a)");
