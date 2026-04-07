@@ -12,6 +12,40 @@ router.get("/testar", async (req, res) => {
   }
 });
 
+// Debug - inspeciona formulario de login
+router.get("/debug-login", async (req, res) => {
+  try {
+    const axios = require("axios");
+    const https = require("https");
+    const agent = new https.Agent({ rejectUnauthorized: false });
+
+    // Pega pagina de login para ver campos e token
+    const loginPage = await axios.get("https://monittora.vertticegr.com.br:1515/Account/Login", {
+      httpsAgent: agent, timeout: 15000
+    });
+
+    // Extrai campos do formulario
+    const html = loginPage.data;
+    const inputs = [];
+    const inputRegex = /<input[^>]+>/gi;
+    let m;
+    while ((m = inputRegex.exec(html)) !== null) {
+      inputs.push(m[0]);
+    }
+
+    // Pega cookies da pagina de login
+    const cookies = loginPage.headers["set-cookie"] || [];
+
+    res.json({ 
+      inputs, 
+      cookies: cookies.map(c => c.split(";")[0]),
+      formAction: html.match(/action="([^"]+)"/)?.[1]
+    });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Debug - retorna HTML bruto
 router.get("/debug-html", async (req, res) => {
   try {
