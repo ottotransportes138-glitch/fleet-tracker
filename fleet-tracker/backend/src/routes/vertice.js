@@ -19,6 +19,36 @@ router.get("/debug-login", async (req, res) => {
     const https = require("https");
     const agent = new https.Agent({ rejectUnauthorized: false });
 
+    // Testa varias URLs de login
+    const urls = [
+      "https://monittora.vertticegr.com.br:1515/",
+      "https://monittora.vertticegr.com.br:1515/Login",
+      "https://monittora.vertticegr.com.br:1515/Account/Login",
+      "https://monittora.vertticegr.com.br:1515/Home/Index",
+    ];
+    
+    const results = {};
+    for (const url of urls) {
+      try {
+        const r = await axios.get(url, { httpsAgent: agent, timeout: 10000, maxRedirects: 5, validateStatus: s => s < 500 });
+        results[url] = { status: r.status, length: r.data.length, redirected: r.request.res.responseUrl };
+      } catch(e) {
+        results[url] = { error: e.message };
+      }
+    }
+    res.json(results);
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Debug - inspeciona formulario de login ANTIGO
+router.get("/debug-login-old", async (req, res) => {
+  try {
+    const axios = require("axios");
+    const https = require("https");
+    const agent = new https.Agent({ rejectUnauthorized: false });
+
     // Pega pagina de login para ver campos e token
     const loginPage = await axios.get("https://monittora.vertticegr.com.br:1515/Account/Login", {
       httpsAgent: agent, timeout: 15000
