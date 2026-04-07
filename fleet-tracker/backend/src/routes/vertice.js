@@ -76,6 +76,43 @@ router.get("/debug-login-old", async (req, res) => {
   }
 });
 
+// Debug tabela viagens
+router.get("/debug-tabela", async (req, res) => {
+  try {
+    const axios = require("axios");
+    const https = require("https");
+    const agent = new https.Agent({ rejectUnauthorized: false });
+    
+    const cookie = "_ga=GA1.1.691159619.1775585728; .AspNetCore.Antiforgery.pJiKq-HQ3Kg=CfDJ8OUVtuHuOOJAq9TxHtEnGB4FQrdi-8K1V--UkgzHFq1ppn6lbvVaxz1mWBEHgzcEv36O_B3_aUHm7aS5sIMv1us3ZsI2YNum3GvbGPKE_nwXTCETLm_DeoHJzqa-buf9VTGTueJEozqMbvS-0c5nYUc; .AspNetCore.Session=CfDJ8OUVtuHuOOJAq9TxHtEnGB4vkNvBfxCTh4QBJk5T39UQU7ThyC3BMFwLoYd2gI80cIg663UFodryPcDHLwuKsxzM4TMDxSPe%2FdM0w7xpP6ufPRiODzmDdR4uV2mwQMkDP54NWkYc0cgC2QRTYI8N4aClyMyoLQrW%2BArHlU0%2BVzxj; kt_aside_menu_wrapperst=0";
+    
+    const r = await axios.get("https://monittora.vertticegr.com.br:1515/Viagem/Index", {
+      headers: { "Cookie": cookie, "User-Agent": "Mozilla/5.0" },
+      httpsAgent: agent, timeout: 15000
+    });
+    
+    const html = r.data;
+    // Extrai apenas a parte da tabela
+    const tableMatch = html.match(/<table[\s\S]*?<\/table>/i);
+    const tableHtml = tableMatch ? tableMatch[0] : "NAO ENCONTROU TABELA";
+    
+    // Tenta buscar via API JSON
+    const r2 = await axios.get("https://monittora.vertticegr.com.br:1515/Viagem/GetViagens", {
+      headers: { "Cookie": cookie, "User-Agent": "Mozilla/5.0", "X-Requested-With": "XMLHttpRequest" },
+      httpsAgent: agent, timeout: 15000, validateStatus: s => s < 500
+    });
+    
+    res.json({
+      htmlLength: html.length,
+      temTabela: !!tableMatch,
+      tabelaHtml: tableHtml.substring(0, 3000),
+      apiStatus: r2.status,
+      apiData: typeof r2.data === "string" ? r2.data.substring(0, 500) : r2.data
+    });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Debug com cookie manual
 router.get("/debug-cookie", async (req, res) => {
   try {
