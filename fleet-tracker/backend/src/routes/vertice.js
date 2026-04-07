@@ -1,5 +1,5 @@
 ﻿const express = require("express");
-const { importarSMsVertice, buscarSMs } = require("../services/vertice");
+const { importarSMsVertice, buscarSMs, loginVertice } = require("../services/vertice");
 const router = express.Router();
 
 // Testa conexao e lista SMs
