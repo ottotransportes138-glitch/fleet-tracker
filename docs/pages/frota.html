@@ -143,7 +143,8 @@ async function carregar() {
 }
 
 function atualizarStats() {
-  const cnt = function(s) { return todas.filter(function(v){return v.status_carga===s;}).length; };
+  const filtradas = tabAtual === 'TODOS' ? todas : todas.filter(function(v){ return (v.tipo_frota||'').toUpperCase() === tabAtual; });
+  const cnt = function(s) { return filtradas.filter(function(v){return v.status_carga===s;}).length; };
   document.getElementById('s-transito').textContent = cnt('Em Trânsito');
   document.getElementById('s-carregar').textContent = cnt('Carregar');
   document.getElementById('s-carregado').textContent = cnt('Carregado');
@@ -163,6 +164,7 @@ function setTab(tab) {
   tabAtual = tab;
   document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
   document.getElementById('tab-' + tab).classList.add('active');
+  atualizarStats();
   renderTabela();
 }
 
