@@ -94,6 +94,7 @@ async function loginVertice() {
 
 async function buscarSMs() {
   try {
+    console.log("[VERTICE] buscarSMs - cookie atual:", getCookieString().substring(0, 100));
     if (!getCookieString().includes("Session")) {
       const ok = await loginVertice();
       if (!ok) return [];
