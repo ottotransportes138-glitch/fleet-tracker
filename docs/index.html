@@ -16,10 +16,13 @@
   label { display:block; color:#888; font-size:12px; font-weight:600; margin-bottom:6px; text-transform:uppercase; letter-spacing:.05em; }
   input { width:100%; background:#111; border:1px solid #333; border-radius:6px; padding:12px 14px; color:#fff; font-size:14px; outline:none; transition:.2s; }
   input:focus { border-color:#d4a017; }
-  .btn-login { width:100%; background:#d4a017; color:#111; border:none; border-radius:6px; padding:13px; font-size:15px; font-weight:800; cursor:pointer; margin-top:8px; transition:.2s; letter-spacing:.03em; }
+  .btn-login { width:100%; background:#d4a017; color:#111; border:none; border-radius:6px; padding:13px; font-size:15px; font-weight:800; cursor:pointer; margin-top:8px; transition:.2s; }
   .btn-login:hover { background:#e6b020; }
   .erro { background:#7f1d1d; color:#fca5a5; border-radius:6px; padding:10px 14px; font-size:13px; margin-bottom:16px; display:none; }
+  .info { background:#1e3a5f; color:#93c5fd; border-radius:6px; padding:10px 14px; font-size:13px; margin-bottom:16px; }
   .versao { text-align:center; color:#333; font-size:11px; margin-top:24px; }
+  .tela { display:none; }
+  .tela.active { display:block; }
 </style>
 </head>
 <body>
@@ -29,45 +32,116 @@
     <h1>Otto Gerenciadora de Risco</h1>
     <p>Sistema de Rastreamento de Frota</p>
   </div>
-  <div class="erro" id="erro">Usuário ou senha incorretos.</div>
-  <div class="form-group">
-    <label>Usuário</label>
-    <input type="text" id="usuario" placeholder="Digite seu usuário" autocomplete="username"/>
+
+  <!-- TELA LOGIN -->
+  <div class="tela active" id="tela-login">
+    <div class="erro" id="erro-login">Usuário ou senha incorretos.</div>
+    <div class="form-group">
+      <label>Usuário</label>
+      <input type="text" id="usuario" placeholder="Digite seu usuário"/>
+    </div>
+    <div class="form-group">
+      <label>Senha</label>
+      <input type="password" id="senha" placeholder="Digite sua senha"/>
+    </div>
+    <button class="btn-login" onclick="login()">Entrar</button>
   </div>
-  <div class="form-group">
-    <label>Senha</label>
-    <input type="password" id="senha" placeholder="Digite sua senha" autocomplete="current-password"/>
+
+  <!-- TELA TROCAR SENHA -->
+  <div class="tela" id="tela-trocar-senha">
+    <div class="info">🔒 Por segurança, defina uma nova senha para continuar.</div>
+    <div class="form-group">
+      <label>Nova Senha</label>
+      <input type="password" id="nova-senha" placeholder="Mínimo 6 caracteres"/>
+    </div>
+    <div class="form-group">
+      <label>Confirmar Senha</label>
+      <input type="password" id="confirmar-senha" placeholder="Repita a nova senha"/>
+    </div>
+    <div class="erro" id="erro-senha"></div>
+    <button class="btn-login" onclick="trocarSenha()">Salvar Nova Senha</button>
   </div>
-  <button class="btn-login" onclick="login()">Entrar</button>
+
   <div class="versao">Otto GR Fleet Tracker v1.0</div>
 </div>
+
 <script>
-// Verifica se ja esta logado
 if (sessionStorage.getItem('ottogrLogado') === 'true') {
   window.location.href = 'pages/index.html';
 }
 
-document.getElementById('senha').addEventListener('keypress', function(e) {
-  if (e.key === 'Enter') login();
-});
-document.getElementById('usuario').addEventListener('keypress', function(e) {
-  if (e.key === 'Enter') login();
-});
+let usuarioLogando = null;
+
+function getUsuarios() {
+  const base = [{ nome:'Administrador', usuario:'adm', senha:'Adm123', perfil:'admin', primeiroAcesso:false }];
+  const extras = JSON.parse(localStorage.getItem('ottogr-usuarios') || '[]');
+  return base.concat(extras);
+}
 
 function login() {
   const usuario = document.getElementById('usuario').value.trim();
   const senha = document.getElementById('senha').value;
-  const erro = document.getElementById('erro');
+  const erro = document.getElementById('erro-login');
 
-  if (usuario === 'adm' && senha === 'Adm123') {
-    sessionStorage.setItem('ottogrLogado', 'true');
-    window.location.href = 'pages/index.html';
+  const usuarios = getUsuarios();
+  const u = usuarios.find(function(x) { return x.usuario === usuario && x.senha === senha; });
+
+  if (u) {
+    usuarioLogando = u;
+    if (u.primeiroAcesso) {
+      // Força troca de senha
+      document.getElementById('tela-login').classList.remove('active');
+      document.getElementById('tela-trocar-senha').classList.add('active');
+    } else {
+      sessionStorage.setItem('ottogrLogado', 'true');
+      sessionStorage.setItem('ottogrUsuario', u.usuario);
+      sessionStorage.setItem('ottogrPerfil', u.perfil);
+      window.location.href = 'pages/index.html';
+    }
   } else {
     erro.style.display = 'block';
     document.getElementById('senha').value = '';
     setTimeout(function() { erro.style.display = 'none'; }, 3000);
   }
 }
+
+function trocarSenha() {
+  const nova = document.getElementById('nova-senha').value;
+  const confirmar = document.getElementById('confirmar-senha').value;
+  const erro = document.getElementById('erro-senha');
+
+  if (nova.length < 6) {
+    erro.textContent = 'Senha deve ter no mínimo 6 caracteres!';
+    erro.style.display = 'block';
+    return;
+  }
+  if (nova !== confirmar) {
+    erro.textContent = 'As senhas não coincidem!';
+    erro.style.display = 'block';
+    return;
+  }
+
+  // Atualiza senha no localStorage
+  let extras = JSON.parse(localStorage.getItem('ottogr-usuarios') || '[]');
+  const idx = extras.findIndex(function(x) { return x.usuario === usuarioLogando.usuario; });
+  if (idx >= 0) {
+    extras[idx].senha = nova;
+    extras[idx].primeiroAcesso = false;
+    localStorage.setItem('ottogr-usuarios', JSON.stringify(extras));
+  }
+
+  sessionStorage.setItem('ottogrLogado', 'true');
+  sessionStorage.setItem('ottogrUsuario', usuarioLogando.usuario);
+  sessionStorage.setItem('ottogrPerfil', usuarioLogando.perfil);
+  window.location.href = 'pages/index.html';
+}
+
+document.addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') {
+    if (document.getElementById('tela-login').classList.contains('active')) login();
+    else trocarSenha();
+  }
+});
 </script>
 </body>
 </html>

@@ -241,7 +241,7 @@ function salvarUsuario() {
   const perfil = document.getElementById('u-perfil').value;
   if (!nome || !usuario || !senha) { alert('Preencha todos os campos!'); return; }
   if (senha.length < 6) { alert('Senha deve ter no mínimo 6 caracteres!'); return; }
-  usuarios.push({ nome, usuario, senha, perfil });
+  usuarios.push({ nome, usuario, senha, perfil, primeiroAcesso: true });
   localStorage.setItem('ottogr-usuarios', JSON.stringify(usuarios));
   renderUsuarios();
   fecharModal();
