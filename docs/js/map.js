@@ -82,7 +82,7 @@ function popupContent(v) {
   const viagemHtml = viagem.destino ? `
     <tr><td colspan="2" style="padding-top:8px;border-top:1px solid #eee;font-weight:700;color:#d4a017">📦 Viagem</td></tr>
     <tr><td style="color:#888">Status</td><td>${statusCargaBadge(viagem.status_carga)}</td></tr>
-    <tr><td style="color:#888">Origem</td><td><b>${viagem.origem||'—'}</b></td></tr>
+    <tr><td style="color:#888">Origem</td><td><b>${viagem.origem_excel||viagem.origem||'—'}</b></td></tr>
     <tr><td style="color:#888">Destino</td><td><b>${viagem.destino||'—'}</b></td></tr>
     <tr><td style="color:#888">Cliente</td><td>${viagem.cliente||'—'}</td></tr>
     <tr><td style="color:#888">Motorista</td><td style="font-size:11px">${viagem.motorista||'—'}</td></tr>
@@ -175,7 +175,7 @@ function updateSidebarList(vehicles) {
 
     const viagemHtml = viagem.destino ? `
       <div style="margin-top:4px;font-size:11px;color:#aaa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-        📍 ${viagem.origem||'?'} → <b style="color:#d4a017">${viagem.destino||'?'}</b>
+        📍 ${viagem.origem_excel||viagem.origem||'?'} → <b style="color:#d4a017">${viagem.destino||'?'}</b>
       </div>
       <div style="margin-top:3px">
         <span style="background:${scColor}22;color:${scColor};padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700">${viagem.status_carga||''}</span>
