@@ -94,7 +94,7 @@ async function loginVertice() {
 
 async function buscarSMs() {
   try {
-    if (!getCookieString().includes("AspNetCore.Session")) {
+    if (!getCookieString().includes("Session")) {
       const ok = await loginVertice();
       if (!ok) return [];
     }
