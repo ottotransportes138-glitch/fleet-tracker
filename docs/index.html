@@ -1,41 +1,73 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fleet Tracker — Mapa ao Vivo</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link rel="stylesheet" href="../css/main.css"/>
+<title>Otto GR — Login</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#111; min-height:100vh; display:flex; align-items:center; justify-content:center; font-family:'Segoe UI',sans-serif; }
+  .login-card { background:#1a1a1a; border:1px solid #333; border-radius:12px; padding:40px; width:360px; box-shadow:0 20px 60px rgba(0,0,0,.5); }
+  .logo-area { text-align:center; margin-bottom:32px; }
+  .logo-area img { width:120px; height:auto; border-radius:8px; margin-bottom:12px; }
+  .logo-area h1 { color:#d4a017; font-size:16px; font-weight:700; }
+  .logo-area p { color:#666; font-size:12px; margin-top:4px; }
+  .form-group { margin-bottom:16px; }
+  label { display:block; color:#888; font-size:12px; font-weight:600; margin-bottom:6px; text-transform:uppercase; letter-spacing:.05em; }
+  input { width:100%; background:#111; border:1px solid #333; border-radius:6px; padding:12px 14px; color:#fff; font-size:14px; outline:none; transition:.2s; }
+  input:focus { border-color:#d4a017; }
+  .btn-login { width:100%; background:#d4a017; color:#111; border:none; border-radius:6px; padding:13px; font-size:15px; font-weight:800; cursor:pointer; margin-top:8px; transition:.2s; letter-spacing:.03em; }
+  .btn-login:hover { background:#e6b020; }
+  .erro { background:#7f1d1d; color:#fca5a5; border-radius:6px; padding:10px 14px; font-size:13px; margin-bottom:16px; display:none; }
+  .versao { text-align:center; color:#333; font-size:11px; margin-top:24px; }
+</style>
 </head>
 <body>
-<nav class="sidebar">
-  <div class="logo">🚛 Fleet Tracker</div>
-  <nav class="nav-links">
-    <a href="index.html" class="active">Mapa ao vivo</a>
-    <a href="routes.html">Rotas</a>
-    <a href="vehicles.html">Veículos</a>
-    <a href="alerts.html">Alertas <span class="badge" id="alert-count">0</span></a>
-    <a href="reports.html">Relatórios</a>
-  </nav>
-  <div class="sidebar-vehicles" id="vehicle-list">
-    <p class="muted">Carregando veículos...</p>
+<div class="login-card">
+  <div class="logo-area">
+    <img src="pages/img/logo.jpg" onerror="this.style.display='none'"/>
+    <h1>Otto Gerenciadora de Risco</h1>
+    <p>Sistema de Rastreamento de Frota</p>
   </div>
-</nav>
-
-<main class="map-container">
-  <div id="map"></div>
-  <div class="status-bar">
-    <span id="ws-status" class="status-dot offline"></span>
-    <span id="ws-label">Conectando...</span>
-    <span class="ml-auto" id="last-update">—</span>
+  <div class="erro" id="erro">Usuário ou senha incorretos.</div>
+  <div class="form-group">
+    <label>Usuário</label>
+    <input type="text" id="usuario" placeholder="Digite seu usuário" autocomplete="username"/>
   </div>
-</main>
+  <div class="form-group">
+    <label>Senha</label>
+    <input type="password" id="senha" placeholder="Digite sua senha" autocomplete="current-password"/>
+  </div>
+  <button class="btn-login" onclick="login()">Entrar</button>
+  <div class="versao">Otto GR Fleet Tracker v1.0</div>
+</div>
+<script>
+// Verifica se ja esta logado
+if (sessionStorage.getItem('ottogrLogado') === 'true') {
+  window.location.href = 'pages/index.html';
+}
 
-<div class="alert-toast hidden" id="alert-toast"></div>
+document.getElementById('senha').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') login();
+});
+document.getElementById('usuario').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') login();
+});
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="../js/config.js"></script>
-<script src="../js/map.js"></script>
-<script src="../js/websocket.js"></script>
+function login() {
+  const usuario = document.getElementById('usuario').value.trim();
+  const senha = document.getElementById('senha').value;
+  const erro = document.getElementById('erro');
+
+  if (usuario === 'adm' && senha === 'Adm123') {
+    sessionStorage.setItem('ottogrLogado', 'true');
+    window.location.href = 'pages/index.html';
+  } else {
+    erro.style.display = 'block';
+    document.getElementById('senha').value = '';
+    setTimeout(function() { erro.style.display = 'none'; }, 3000);
+  }
+}
+</script>
 </body>
 </html>
