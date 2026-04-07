@@ -23,7 +23,7 @@ router.get("/debug-login", async (req, res) => {
     const urls = [
       "https://monittora.vertticegr.com.br:1515/",
       "https://monittora.vertticegr.com.br:1515/Login",
-      "https://monittora.vertticegr.com.br:1515/Account/Login",
+      "https://monittora.vertticegr.com.br:1515/Login",
       "https://monittora.vertticegr.com.br:1515/Home/Index",
     ];
     
@@ -50,7 +50,7 @@ router.get("/debug-login-old", async (req, res) => {
     const agent = new https.Agent({ rejectUnauthorized: false });
 
     // Pega pagina de login para ver campos e token
-    const loginPage = await axios.get("https://monittora.vertticegr.com.br:1515/Account/Login", {
+    const loginPage = await axios.get("https://monittora.vertticegr.com.br:1515/Login", {
       httpsAgent: agent, timeout: 15000
     });
 

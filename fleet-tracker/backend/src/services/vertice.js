@@ -13,7 +13,7 @@ async function loginVertice() {
     params.append("Login", VERTICE_LOGIN);
     params.append("Senha", VERTICE_SENHA);
 
-    const res = await axios.post(VERTICE_URL + "/Account/Login", params, {
+    const res = await axios.post(VERTICE_URL + "/Login", params, {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       maxRedirects: 0,
       validateStatus: s => s < 400,
