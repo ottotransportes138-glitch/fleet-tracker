@@ -79,9 +79,10 @@ async function buscarSMs() {
       if (!ok) return [];
     }
 
-    const hoje = new Date();
-    const inicio = new Date(hoje);
-    inicio.setDate(inicio.getDate() - 30);
+    // Ajusta para horario de Brasilia (UTC-3)
+    const agora = new Date();
+    const hoje = new Date(agora.getTime() - 3 * 60 * 60 * 1000);
+    const inicio = new Date(hoje.getTime() - 30 * 24 * 60 * 60 * 1000);
     const pad = n => String(n).padStart(2,"0");
     const formatDate = d => pad(d.getDate()) + "/" + pad(d.getMonth()+1) + "/" + d.getFullYear() + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
     const formatDateFim = d => pad(d.getDate()) + "/" + pad(d.getMonth()+1) + "/" + d.getFullYear() + " 23:59:59";
