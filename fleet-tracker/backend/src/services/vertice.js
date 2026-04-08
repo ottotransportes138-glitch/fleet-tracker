@@ -111,6 +111,8 @@ async function buscarSMs() {
       "_": Date.now().toString()
     });
 
+    console.log("[VERTICE] DT_CRIOU_INI:", formatDate(inicio));
+    console.log("[VERTICE] DT_CRIOU_FIM:", formatDateFim(hoje));
     console.log("[VERTICE] Chamando CarregarGridViagem...");
     
     const res = await axios.get(VERTICE_URL + "/Viagem/CarregarGridViagem?" + params.toString(), {
