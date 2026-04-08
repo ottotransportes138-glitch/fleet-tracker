@@ -82,18 +82,9 @@ async function buscarSMs() {
     const hoje = new Date();
     const inicio = new Date(hoje);
     inicio.setDate(inicio.getDate() - 30);
-    const formatDate = d => {
-      const dd = String(d.getDate()).padStart(2,"0");
-      const mm = String(d.getMonth()+1).padStart(2,"0");
-      const yyyy = d.getFullYear();
-      return dd + "/" + mm + "/" + yyyy + " 00:00:00";
-    };
-    const formatDateFim = d => {
-      const dd = String(d.getDate()).padStart(2,"0");
-      const mm = String(d.getMonth()+1).padStart(2,"0");
-      const yyyy = d.getFullYear();
-      return dd + "/" + mm + "/" + yyyy + " 23:59:59";
-    };
+    const pad = n => String(n).padStart(2,"0");
+    const formatDate = d => pad(d.getDate()) + "/" + pad(d.getMonth()+1) + "/" + d.getFullYear() + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+    const formatDateFim = d => pad(d.getDate()) + "/" + pad(d.getMonth()+1) + "/" + d.getFullYear() + " 23:59:59";
 
     const params = new URLSearchParams({
       sEcho: "1", iColumns: "13",
@@ -114,8 +105,8 @@ async function buscarSMs() {
       mDataProp_12: "NM_USUARIO_CRIOU", sSearch_12: "", bRegex_12: "false", bSearchable_12: "true",
       sSearch: "", bRegex: "false",
       CODIGO_VIAGEM: "", DS_PLACA_FILTRO: "", DS_NOME: "", DS_PGR: "",
-      DT_CRIOU_INI: "04/07/2026 08:50:51",
-      DT_CRIOU_FIM: "04/08/2026 23:59:59",
+      DT_CRIOU_INI: formatDate(inicio),
+      DT_CRIOU_FIM: formatDateFim(hoje),
       "_": Date.now().toString()
     });
 
