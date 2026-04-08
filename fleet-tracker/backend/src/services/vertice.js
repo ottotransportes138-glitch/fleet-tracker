@@ -114,8 +114,8 @@ async function buscarSMs() {
       mDataProp_12: "NM_USUARIO_CRIOU", sSearch_12: "", bRegex_12: "false", bSearchable_12: "true",
       sSearch: "", bRegex: "false",
       CODIGO_VIAGEM: "", DS_PLACA_FILTRO: "", DS_NOME: "", DS_PGR: "",
-      DT_CRIOU_INI: "",
-      DT_CRIOU_FIM: "",
+      DT_CRIOU_INI: "04/07/2026 08:50:51",
+      DT_CRIOU_FIM: "04/08/2026 23:59:59",
       "_": Date.now().toString()
     });
 
