@@ -317,11 +317,11 @@ document.addEventListener("click", function(e) {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div>
         <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Placa *</label>
-        <select id="nv-placa" style="width:100%;border:1px solid #ddd;border-radius:4px;padding:7px 12px;font-size:13px"><option value="">Selecione a placa...</option></select>
+        <select id="nv-placa" onchange="carregarMotorista(this.value)" style="width:100%;border:1px solid #ddd;border-radius:4px;padding:7px 12px;font-size:13px"><option value="">Selecione a placa...</option></select>
       </div>
       <div>
         <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Motorista</label>
-        <input id="nv-motorista" class="search-input" style="width:100%" placeholder="Nome do motorista"/>
+        <select id="nv-motorista" style="width:100%;border:1px solid #ddd;border-radius:4px;padding:7px 12px;font-size:13px"><option value="">Selecione o motorista...</option></select>
       </div>
       <div>
         <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Origem *</label>
@@ -391,13 +391,39 @@ async function abrirModalNovaViagem() {
   document.getElementById('nv-erro').style.display = 'none';
 }
 
+async function carregarMotorista(placa) {
+  if (!placa) return;
+  try {
+    const res = await fetch(CONFIG.API_URL + "/api/viagens");
+    const viagens = await res.json();
+    const sel = document.getElementById("nv-motorista");
+    sel.innerHTML = "<option value=\"\">Selecione o motorista...</option>";
+    
+    // Pega motoristas unicos das viagens desta placa
+    const motoristas = [...new Set(
+      viagens.filter(v => v.placa === placa && v.motorista)
+             .map(v => v.motorista)
+    )].sort();
+    
+    motoristas.forEach(function(m) {
+      const o = document.createElement("option");
+      o.value = m;
+      o.textContent = m;
+      sel.appendChild(o);
+    });
+    
+    // Se so tem um motorista, seleciona automaticamente
+    if (motoristas.length === 1) sel.value = motoristas[0];
+  } catch(e) { console.error("Erro motorista:", e); }
+}
+
 function fecharModalNovaViagem() {
   document.getElementById('modal-nova-viagem').style.display = 'none';
 }
 
 async function salvarNovaViagem() {
   const placa = document.getElementById('nv-placa').value.trim().toUpperCase();
-  const motorista = document.getElementById('nv-motorista').value.trim();
+  const motorista = document.getElementById('nv-motorista').value;
   const origem = document.getElementById('nv-origem').value.trim();
   const destino = document.getElementById('nv-destino').value.trim();
   const cliente = document.getElementById('nv-cliente').value.trim();
