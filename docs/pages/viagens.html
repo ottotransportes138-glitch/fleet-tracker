@@ -368,11 +368,11 @@ document.addEventListener("click", function(e) {
 
 <!-- Modal Nova Viagem -->
 <div id="modal-nova-viagem" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center">
-  <div style="background:#fff;border-radius:8px;padding:24px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto">
+<div id="modal-nova-viagem" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:8px;padding:24px;width:900px;max-width:98vw;max-height:95vh;overflow-y:auto;display:flex;gap:20px">
+  <div style="flex:1;min-width:300px">
     <h3 style="font-size:15px;font-weight:700;margin-bottom:16px">➕ Nova Viagem</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div>
-        <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Placa *</label>
         <input id="nv-placa" list="lista-placas" onchange="carregarMotorista(this.value)" class="search-input" style="width:100%" placeholder="Digite ou selecione a placa..."/>
       </div>
       <div>
@@ -381,11 +381,11 @@ document.addEventListener("click", function(e) {
       </div>
       <div>
         <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Origem *</label>
-        <input id="nv-origem" list="lista-cidades" class="search-input" style="width:100%" placeholder="Ex: São Paulo-SP"/>
+        <input id="nv-origem" list="lista-cidades" onchange="calcularRotaMapa()" class="search-input" style="width:100%" placeholder="Ex: São Paulo-SP"/>
       </div>
       <div>
         <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Destino *</label>
-        <input id="nv-destino" list="lista-cidades" class="search-input" style="width:100%" placeholder="Ex: Brasília-DF"/>
+        <input id="nv-destino" list="lista-cidades" onchange="calcularRotaMapa()" class="search-input" style="width:100%" placeholder="Ex: Brasília-DF"/>
       </div>
       <div>
         <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Cliente</label>
@@ -418,19 +418,19 @@ document.addEventListener("click", function(e) {
         <input id="nv-cte" class="search-input" style="width:100%" placeholder="Número do CT-e"/>
       </div>
     </div>
+    </div>
     <div id="nv-erro" style="background:#fee2e2;color:#dc2626;border-radius:4px;padding:8px 12px;font-size:12px;margin-top:12px;display:none"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
       <button onclick="fecharModalNovaViagem()" style="background:#f3f4f6;color:#555;border:none;border-radius:4px;padding:8px 16px;font-size:13px;cursor:pointer">Cancelar</button>
       <button onclick="salvarNovaViagem()" style="background:#d4a017;color:#111;border:none;border-radius:4px;padding:8px 20px;font-size:13px;font-weight:700;cursor:pointer">💾 Salvar</button>
     </div>
   </div>
+  <div style="flex:1;min-width:300px;display:flex;flex-direction:column;gap:8px">
+    <div style="font-size:13px;font-weight:700;color:#111">🗺 Rota</div>
+    <div id="nv-mapa" style="flex:1;min-height:400px;border-radius:8px;border:1px solid #ddd;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#888;font-size:13px">Preencha origem e destino para ver a rota</div>
+    <div id="nv-rota-info" style="font-size:12px;color:#555;text-align:center"></div>
+  </div>
 </div>
-
-<script>
-async function abrirModalNovaViagem() {
-  document.getElementById('modal-nova-viagem').style.display = 'flex';
-  carregarClientes();
-  // Carrega placas
   try {
     const resP = await fetch(CONFIG.API_URL + "/api/vehicles");
     const veics = await resP.json();
@@ -475,6 +475,9 @@ async function carregarMotorista(placa) {
 }
 
 function fecharModalNovaViagem() {
+  if (nvMapa) { nvMapa.remove(); nvMapa = null; nvRotaLayer = null; }
+  document.getElementById("nv-mapa").innerHTML = "Preencha origem e destino para ver a rota";
+  document.getElementById("nv-rota-info").textContent = "";
   document.getElementById('modal-nova-viagem').style.display = 'none';
 }
 
