@@ -90,7 +90,10 @@
 <div class="page">
   <div class="page-header">
     <h1>📦 Status de Viagens</h1>
-    <div id="atualizado" style="font-size:11px;color:#888"></div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div id="atualizado" style="font-size:11px;color:#888"></div>
+      <button class="btn-upload" onclick="abrirModalNovaViagem()" style="background:#111;color:#d4a017">➕ Nova Viagem</button>
+    </div>
   </div>
 
   <div class="upload-card">
@@ -315,6 +318,117 @@ document.addEventListener("click", function(e) {
     gear.classList.remove("open");
   }
 });
+</script>
+<!-- Modal Nova Viagem -->
+<div id="modal-nova-viagem" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:8px;padding:24px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto">
+    <h3 style="font-size:15px;font-weight:700;margin-bottom:16px">➕ Nova Viagem</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Placa *</label>
+        <input id="nv-placa" class="search-input" style="width:100%" placeholder="Ex: ABC1D23"/>
+      </div>
+      <div>
+        <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Motorista</label>
+        <input id="nv-motorista" class="search-input" style="width:100%" placeholder="Nome do motorista"/>
+      </div>
+      <div>
+        <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Origem *</label>
+        <input id="nv-origem" class="search-input" style="width:100%" placeholder="Ex: São Paulo-SP"/>
+      </div>
+      <div>
+        <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Destino *</label>
+        <input id="nv-destino" class="search-input" style="width:100%" placeholder="Ex: Brasília-DF"/>
+      </div>
+      <div>
+        <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Cliente</label>
+        <input id="nv-cliente" class="search-input" style="width:100%" placeholder="Nome do cliente"/>
+      </div>
+      <div>
+        <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Valor da Carga (R$)</label>
+        <input id="nv-valor" class="search-input" style="width:100%" placeholder="Ex: 150000" type="number"/>
+      </div>
+      <div>
+        <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Status</label>
+        <select id="nv-status" style="width:100%;border:1px solid #ddd;border-radius:4px;padding:7px 12px;font-size:13px">
+          <option value="Em Trânsito">Em Trânsito</option>
+          <option value="Carregar">Carregar</option>
+          <option value="Carregado">Carregado</option>
+          <option value="Ag. Descarga">Ag. Descarga</option>
+          <option value="Vazio">Vazio</option>
+          <option value="Manutenção">Manutenção</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Tipo Frota</label>
+        <select id="nv-tipo" style="width:100%;border:1px solid #ddd;border-radius:4px;padding:7px 12px;font-size:13px">
+          <option value="RODOTREM">Rodotrem</option>
+          <option value="LS">LS</option>
+        </select>
+      </div>
+      <div style="grid-column:1/-1">
+        <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Nº CT-e</label>
+        <input id="nv-cte" class="search-input" style="width:100%" placeholder="Número do CT-e"/>
+      </div>
+    </div>
+    <div id="nv-erro" style="background:#fee2e2;color:#dc2626;border-radius:4px;padding:8px 12px;font-size:12px;margin-top:12px;display:none"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+      <button onclick="fecharModalNovaViagem()" style="background:#f3f4f6;color:#555;border:none;border-radius:4px;padding:8px 16px;font-size:13px;cursor:pointer">Cancelar</button>
+      <button onclick="salvarNovaViagem()" style="background:#d4a017;color:#111;border:none;border-radius:4px;padding:8px 20px;font-size:13px;font-weight:700;cursor:pointer">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function abrirModalNovaViagem() {
+  document.getElementById('modal-nova-viagem').style.display = 'flex';
+  document.getElementById('nv-placa').value = '';
+  document.getElementById('nv-motorista').value = '';
+  document.getElementById('nv-origem').value = '';
+  document.getElementById('nv-destino').value = '';
+  document.getElementById('nv-cliente').value = '';
+  document.getElementById('nv-valor').value = '';
+  document.getElementById('nv-cte').value = '';
+  document.getElementById('nv-erro').style.display = 'none';
+}
+
+function fecharModalNovaViagem() {
+  document.getElementById('modal-nova-viagem').style.display = 'none';
+}
+
+async function salvarNovaViagem() {
+  const placa = document.getElementById('nv-placa').value.trim().toUpperCase();
+  const motorista = document.getElementById('nv-motorista').value.trim();
+  const origem = document.getElementById('nv-origem').value.trim();
+  const destino = document.getElementById('nv-destino').value.trim();
+  const cliente = document.getElementById('nv-cliente').value.trim();
+  const valor = document.getElementById('nv-valor').value;
+  const status = document.getElementById('nv-status').value;
+  const tipo = document.getElementById('nv-tipo').value;
+  const cte = document.getElementById('nv-cte').value.trim();
+  const erro = document.getElementById('nv-erro');
+
+  if (!placa || !origem || !destino) {
+    erro.textContent = 'Placa, Origem e Destino são obrigatórios!';
+    erro.style.display = 'block';
+    return;
+  }
+
+  try {
+    const res = await fetch(CONFIG.API_URL + '/api/viagens/manual', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ placa, motorista, origem, destino, cliente, valor_carga: valor, status_carga: status, tipo_frota: tipo, cte })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    fecharModalNovaViagem();
+    carregarViagens();
+  } catch(e) {
+    erro.textContent = 'Erro ao salvar: ' + e.message;
+    erro.style.display = 'block';
+  }
+}
 </script>
 </body>
 </html>
