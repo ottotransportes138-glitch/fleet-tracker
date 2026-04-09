@@ -379,7 +379,7 @@ async function abrirModalNovaViagem() {
     const veics = await resP.json();
     const sel = document.getElementById("nv-placa");
     sel.innerHTML = "<option value=\"\">Selecione a placa...</option>";
-    if (Array.isArray(veics)) veics.filter(v=>v.active).sort((a,b)=>a.plate.localeCompare(b.plate)).forEach(v=>{const o=document.createElement("option");o.value=v.plate;o.textContent=v.plate+(v.driver?" — "+v.driver:"");sel.appendChild(o);});
+    if (Array.isArray(veics)) veics.sort((a,b)=>a.plate.localeCompare(b.plate)).forEach(v=>{const o=document.createElement("option");o.value=v.plate;o.textContent=v.plate+(v.driver?" — "+v.driver:"");sel.appendChild(o);});
   } catch(e) {}
   document.getElementById("nv-placa").value = "";
   document.getElementById('nv-motorista').value = '';
