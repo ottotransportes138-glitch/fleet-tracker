@@ -96,15 +96,7 @@
     </div>
   </div>
 
-  <div class="upload-card">
-    <div>
-      <b style="font-size:13px">📤 Importar Excel</b>
-      <div class="file-label">Arquivo: <span class="file-name" id="file-name">nenhum selecionado</span></div>
-    </div>
-    <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none" onchange="processarExcel(this)"/>
-    <button class="btn-upload" onclick="document.getElementById('file-input').click()">📂 Selecionar Excel</button>
-    <button class="btn-upload" id="btn-importar" onclick="importarViagens()" style="display:none;background:#111;color:#d4a017">📤 Importar</button>
-    <div class="upload-result" id="upload-result"></div>
+  
   </div>
 
   <div class="stats-row" id="stats-row">
@@ -261,7 +253,7 @@ function processarExcel(input) {
     const ws = wb.Sheets['Frota Geral'] || wb.Sheets[wb.SheetNames[0]];
     const dados = XLSX.utils.sheet_to_json(ws, { range: 3 });
     dadosExcel = dados.filter(r => r['Placa'] || r['placa']);
-    document.getElementById('btn-importar').style.display = 'inline-block';
+    
     const result = document.getElementById('upload-result');
     result.style.display = 'block';
     result.className = 'upload-result ok';
@@ -286,9 +278,9 @@ async function importarViagens() {
     result.className = data.erros?.length ? 'upload-result erro' : 'upload-result ok';
     result.textContent = `✅ ${data.importadas} importados.${data.erros?.length ? ' Erros: ' + data.erros.slice(0,3).join(', ') : ''}`;
     dadosExcel = [];
-    document.getElementById('btn-importar').style.display = 'none';
+    
     document.getElementById('file-name').textContent = 'nenhum selecionado';
-    document.getElementById('file-input').value = '';
+    
     carregarViagens();
   } catch(e) {
     result.className = 'upload-result erro';
@@ -409,8 +401,24 @@ async function salvarNovaViagem() {
   const erro = document.getElementById('nv-erro');
 
   if (!placa || !origem || !destino) {
-    erro.textContent = 'Placa, Origem e Destino são obrigatórios!';
-    erro.style.display = 'block';
+    erro.textContent = "Placa, Origem e Destino são obrigatórios!";
+    erro.style.display = "block";
+    return;
+  }
+
+  // Verifica se placa esta cadastrada
+  try {
+    const checkRes = await fetch(CONFIG.API_URL + "/api/vehicles?plate=" + placa);
+    const checkData = await checkRes.json();
+    const existe = Array.isArray(checkData) ? checkData.some(function(v) { return v.plate === placa; }) : false;
+    if (!existe) {
+      erro.textContent = "Placa " + placa + " não está cadastrada no sistema!";
+      erro.style.display = "block";
+      return;
+    }
+  } catch(e) {
+    erro.textContent = "Erro ao verificar placa: " + e.message;
+    erro.style.display = "block";
     return;
   }
 
