@@ -310,6 +310,61 @@ document.addEventListener("click", function(e) {
   }
 });
 </script>
+<!-- Datalist cidades -->
+<datalist id="lista-cidades">
+  <option value="São Paulo-SP"><option value="Guarulhos-SP"><option value="Campinas-SP">
+  <option value="São Bernardo do Campo-SP"><option value="Santo André-SP"><option value="Osasco-SP">
+  <option value="Ribeirão Preto-SP"><option value="Sorocaba-SP"><option value="São José dos Campos-SP">
+  <option value="Santos-SP"><option value="Mauá-SP"><option value="Carapicuíba-SP">
+  <option value="Mogi das Cruzes-SP"><option value="Diadema-SP"><option value="Jundiaí-SP">
+  <option value="Piracicaba-SP"><option value="Bauru-SP"><option value="Franca-SP">
+  <option value="São Vicente-SP"><option value="Limeira-SP"><option value="Cabreúva-SP">
+  <option value="Rio de Janeiro-RJ"><option value="São Gonçalo-RJ"><option value="Duque de Caxias-RJ">
+  <option value="Nova Iguaçu-RJ"><option value="Niterói-RJ"><option value="Belford Roxo-RJ">
+  <option value="Campo Grande-RJ"><option value="São João de Meriti-RJ"><option value="Petropolis-RJ">
+  <option value="Volta Redonda-RJ"><option value="Magé-RJ"><option value="Resende-RJ">
+  <option value="Belo Horizonte-MG"><option value="Uberlândia-MG"><option value="Contagem-MG">
+  <option value="Juiz de Fora-MG"><option value="Betim-MG"><option value="Montes Claros-MG">
+  <option value="Ribeirão das Neves-MG"><option value="Uberaba-MG"><option value="Governador Valadares-MG">
+  <option value="Ipatinga-MG"><option value="Araguari-MG"><option value="Sete Lagoas-MG">
+  <option value="Brasília-DF"><option value="Ceilândia-DF"><option value="Taguatinga-DF">
+  <option value="Planaltina-DF"><option value="Samambaia-DF"><option value="Gama-DF">
+  <option value="Salvador-BA"><option value="Feira de Santana-BA"><option value="Vitória da Conquista-BA">
+  <option value="Camaçari-BA"><option value="Itabuna-BA"><option value="Juazeiro-BA">
+  <option value="Fortaleza-CE"><option value="Caucaia-CE"><option value="Juazeiro do Norte-CE">
+  <option value="Maracanaú-CE"><option value="Sobral-CE"><option value="Crato-CE">
+  <option value="Manaus-AM"><option value="Parintins-AM"><option value="Itacoatiara-AM">
+  <option value="Belém-PA"><option value="Ananindeua-PA"><option value="Santarém-PA">
+  <option value="Recife-PE"><option value="Olinda-PE"><option value="Caruaru-PE">
+  <option value="Jaboatão dos Guararapes-PE"><option value="Petrolina-PE">
+  <option value="Porto Alegre-RS"><option value="Caxias do Sul-RS"><option value="Pelotas-RS">
+  <option value="Canoas-RS"><option value="Santa Maria-RS"><option value="Gravataí-RS">
+  <option value="Curitiba-PR"><option value="Londrina-PR"><option value="Maringá-PR">
+  <option value="Ponta Grossa-PR"><option value="Cascavel-PR"><option value="São José dos Pinhais-PR">
+  <option value="Florianópolis-SC"><option value="Joinville-SC"><option value="Blumenau-SC">
+  <option value="São José-SC"><option value="Criciúma-SC"><option value="Chapecó-SC">
+  <option value="Goiânia-GO"><option value="Aparecida de Goiânia-GO"><option value="Anápolis-GO">
+  <option value="Rio Verde-GO"><option value="Luziânia-GO"><option value="Nerópolis-GO">
+  <option value="Campo Grande-MS"><option value="Dourados-MS"><option value="Três Lagoas-MS">
+  <option value="Cuiabá-MT"><option value="Várzea Grande-MT"><option value="Rondonópolis-MT">
+  <option value="Porto Velho-RO"><option value="Ji-Paraná-RO"><option value="Ariquemes-RO">
+  <option value="Macapá-AP"><option value="Santana-AP">
+  <option value="Rio Branco-AC"><option value="Cruzeiro do Sul-AC">
+  <option value="Boa Vista-RR"><option value="Rorainópolis-RR">
+  <option value="Palmas-TO"><option value="Araguaína-TO"><option value="Gurupi-TO">
+  <option value="São Luís-MA"><option value="Imperatriz-MA"><option value="Timon-MA">
+  <option value="Teresina-PI"><option value="Parnaíba-PI"><option value="Picos-PI">
+  <option value="Natal-RN"><option value="Mossoró-RN"><option value="Parnamirim-RN">
+  <option value="João Pessoa-PB"><option value="Campina Grande-PB"><option value="Santa Rita-PB">
+  <option value="Maceió-AL"><option value="Arapiraca-AL"><option value="Rio Largo-AL">
+  <option value="Aracaju-SE"><option value="Nossa Senhora do Socorro-SE"><option value="Lagarto-SE">
+  <option value="Macapá-AP"><option value="Vitória-ES"><option value="Serra-ES">
+  <option value="Vila Velha-ES"><option value="Cariacica-ES"><option value="Cachoeiro de Itapemirim-ES">
+  <option value="Leme-SP"><option value="Pouso Alegre-MG"><option value="Astolfo Dutra-MG">
+  <option value="Neropolis-GO"><option value="Anapolis-GO"><option value="Goiania-GO">
+  <option value="Pirai-RJ"><option value="Guarulhos-SP"><option value="Sorocaba-SP">
+</datalist>
+
 <!-- Modal Nova Viagem -->
 <div id="modal-nova-viagem" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center">
   <div style="background:#fff;border-radius:8px;padding:24px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto">
@@ -324,11 +379,11 @@ document.addEventListener("click", function(e) {
         <select id="nv-motorista" style="width:100%;border:1px solid #ddd;border-radius:4px;padding:7px 12px;font-size:13px"><option value="">Selecione o motorista...</option></select>
       </div>
       <div>
-        <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Origem *</label>
+        <input id="nv-origem" list="lista-cidades" class="search-input" style="width:100%" placeholder="Ex: São Paulo-SP"/>
         <input id="nv-origem" class="search-input" style="width:100%" placeholder="Ex: São Paulo-SP"/>
       </div>
       <div>
-        <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Destino *</label>
+        <input id="nv-destino" list="lista-cidades" class="search-input" style="width:100%" placeholder="Ex: Brasília-DF"/>
         <input id="nv-destino" class="search-input" style="width:100%" placeholder="Ex: Brasília-DF"/>
       </div>
       <div>
