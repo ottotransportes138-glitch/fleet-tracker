@@ -388,7 +388,7 @@ document.addEventListener("click", function(e) {
       </div>
       <div>
         <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Cliente</label>
-        <input id="nv-cliente" class="search-input" style="width:100%" placeholder="Nome do cliente"/>
+        <input id="nv-cliente" list="lista-clientes" class="search-input" style="width:100%" placeholder="Nome do cliente"/>
       </div>
       <div>
         <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Valor da Carga (R$)</label>
@@ -428,6 +428,7 @@ document.addEventListener("click", function(e) {
 <script>
 async function abrirModalNovaViagem() {
   document.getElementById('modal-nova-viagem').style.display = 'flex';
+  carregarClientes();
   // Carrega placas
   try {
     const resP = await fetch(CONFIG.API_URL + "/api/vehicles");
