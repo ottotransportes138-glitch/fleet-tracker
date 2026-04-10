@@ -29,6 +29,25 @@ function distanciaKm(lat1, lng1, lat2, lng2) {
 }
 
 // Geocodifica todas as viagens sem coordenadas
+router.get("/buscar", async (req, res) => {
+  const { q } = req.query;
+  if (!q) return res.status(400).json({ error: "q obrigatorio" });
+  try {
+    const axios = require("axios");
+    const result = await axios.get("https://nominatim.openstreetmap.org/search", {
+      params: { q, format: "json", limit: 1 },
+      headers: { "User-Agent": "OttoGR-FleetTracker/1.0" },
+      timeout: 5000
+    });
+    if (result.data && result.data.length > 0) {
+      return res.json({ lat: parseFloat(result.data[0].lat), lng: parseFloat(result.data[0].lon) });
+    }
+    res.json({ lat: null, lng: null });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 router.post("/geocodificar", async (req, res) => {
   try {
     const { rows } = await db.query(
