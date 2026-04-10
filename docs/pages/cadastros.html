@@ -19,6 +19,7 @@
   .section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
   .btn-add { background:#111; color:#d4a017; border:none; border-radius:6px; padding:8px 16px; font-size:12px; font-weight:700; cursor:pointer; }
   .btn-add:hover { background:#222; }
+  .search-input { border:1px solid #ddd; border-radius:4px; padding:7px 12px; font-size:13px; width:250px; }
   table { width:100%; border-collapse:collapse; font-size:13px; }
   th { background:#111; color:#d4a017; padding:10px 12px; text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; }
   td { padding:10px 12px; border-bottom:1px solid #f0f0f0; }
@@ -52,8 +53,8 @@
     <a href="vehicles.html">🚛 Veículos</a>
     <a href="frota.html?tipo=RODOTREM">🚛 Rodotrem</a>
     <a href="frota.html?tipo=LS">🚚 LS</a>
-    <a href="viagens.html">📦 Viagens</a>
     <a href="cadastros.html" class="active">📋 Cadastros</a>
+    <a href="viagens.html">📦 Viagens</a>
     <a href="alerts.html">⚠️ Alertas</a>
     <a href="reports.html">📊 Dashboard</a>
   </nav>
@@ -74,7 +75,6 @@
   <div class="page-header">
     <h1>📋 Cadastros</h1>
   </div>
-
   <div class="card">
     <div class="tab-bar">
       <button class="tab-btn active" onclick="setTab('motoristas')">👨 Motoristas</button>
@@ -84,43 +84,24 @@
     <!-- ABA MOTORISTAS -->
     <div class="tab-content active" id="tab-motoristas">
       <div class="section-header">
-        <span style="font-size:13px;font-weight:700;color:#111">Lista de Motoristas</span>
+        <input class="search-input" placeholder="🔍 Buscar motorista..." oninput="filtrarMotoristas(this.value)"/>
         <button class="btn-add" onclick="abrirModal('motorista')">+ Novo Motorista</button>
       </div>
       <table>
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>CPF</th>
-            <th>CNH</th>
-            <th>Telefone</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody id="tabela-motoristas">
-          <tr><td colspan="5" class="empty">⏳ Carregando...</td></tr>
-        </tbody>
+        <thead><tr><th>Nome</th><th>CPF</th><th>CNH</th><th>Telefone</th><th>Ações</th></tr></thead>
+        <tbody id="tabela-motoristas"><tr><td colspan="5" class="empty">⏳ Carregando...</td></tr></tbody>
       </table>
     </div>
 
     <!-- ABA CLIENTES -->
     <div class="tab-content" id="tab-clientes">
       <div class="section-header">
-        <span style="font-size:13px;font-weight:700;color:#111">Lista de Clientes</span>
+        <input class="search-input" placeholder="🔍 Buscar cliente..." oninput="filtrarClientes(this.value)"/>
         <button class="btn-add" onclick="abrirModal('cliente')">+ Novo Cliente</button>
       </div>
       <table>
-        <thead>
-          <tr>
-            <th>Nome/Razão Social</th>
-            <th>CNPJ</th>
-            <th>Telefone</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody id="tabela-clientes">
-          <tr><td colspan="4" class="empty">⏳ Carregando...</td></tr>
-        </tbody>
+        <thead><tr><th>Nome/Razão Social</th><th>CNPJ</th><th>Telefone</th><th>Ações</th></tr></thead>
+        <tbody id="tabela-clientes"><tr><td colspan="4" class="empty">⏳ Carregando...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -130,22 +111,10 @@
 <div class="modal-overlay" id="modal-motorista">
   <div class="modal">
     <h3 id="modal-motorista-titulo">👨 Novo Motorista</h3>
-    <div class="form-group">
-      <label class="form-label">Nome completo *</label>
-      <input class="form-input" id="m-nome" placeholder="Ex: João Silva"/>
-    </div>
-    <div class="form-group">
-      <label class="form-label">CPF</label>
-      <input class="form-input" id="m-cpf" placeholder="000.000.000-00"/>
-    </div>
-    <div class="form-group">
-      <label class="form-label">CNH</label>
-      <input class="form-input" id="m-cnh" placeholder="Número da CNH"/>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Telefone</label>
-      <input class="form-input" id="m-tel" placeholder="(00) 00000-0000"/>
-    </div>
+    <div class="form-group"><label class="form-label">Nome completo *</label><input class="form-input" id="m-nome" placeholder="Ex: João Silva"/></div>
+    <div class="form-group"><label class="form-label">CPF</label><input class="form-input" id="m-cpf" placeholder="000.000.000-00"/></div>
+    <div class="form-group"><label class="form-label">CNH</label><input class="form-input" id="m-cnh" placeholder="Número da CNH"/></div>
+    <div class="form-group"><label class="form-label">Telefone</label><input class="form-input" id="m-tel" placeholder="(00) 00000-0000"/></div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="fecharModal('motorista')">Cancelar</button>
       <button class="btn-save" onclick="salvarMotorista()">💾 Salvar</button>
@@ -157,18 +126,9 @@
 <div class="modal-overlay" id="modal-cliente">
   <div class="modal">
     <h3 id="modal-cliente-titulo">🏢 Novo Cliente</h3>
-    <div class="form-group">
-      <label class="form-label">Nome/Razão Social *</label>
-      <input class="form-input" id="c-nome" placeholder="Ex: Coca-Cola"/>
-    </div>
-    <div class="form-group">
-      <label class="form-label">CNPJ</label>
-      <input class="form-input" id="c-cnpj" placeholder="00.000.000/0000-00"/>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Telefone</label>
-      <input class="form-input" id="c-tel" placeholder="(00) 00000-0000"/>
-    </div>
+    <div class="form-group"><label class="form-label">Nome/Razão Social *</label><input class="form-input" id="c-nome" placeholder="Ex: Coca-Cola"/></div>
+    <div class="form-group"><label class="form-label">CNPJ</label><input class="form-input" id="c-cnpj" placeholder="00.000.000/0000-00"/></div>
+    <div class="form-group"><label class="form-label">Telefone</label><input class="form-input" id="c-tel" placeholder="(00) 00000-0000"/></div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="fecharModal('cliente')">Cancelar</button>
       <button class="btn-save" onclick="salvarCliente()">💾 Salvar</button>
@@ -178,130 +138,117 @@
 
 <script src="../js/config.js"></script>
 <script>
-// Dados salvos localmente
-const motoristasIniciais = ["ADILSON NASCIMENTO DOS SANTOS","AGNALDO BELIZARIO GUIMARAES","ALENCAR ALVES ACRINA","ALEXANDRE DE OLIVEIRA SANTOS","ALEX MARINHO DE SOUZA","AMARILDO DE BARROS BRANDAO","AMILTON RODRIGUES DA SILVA","ANTONIO MARCOS DA SILVA","AURELIANO GONCALVES MOTA","CESAR LEONARDO CUNHA SILVA","CLEMILSON RODRIGUES DA SILVA","DAVI DO BONFIM MONTEIRO DA","DIEGO PALMEIRAS","DIONIS ALVES DE QUEIROZ","EDIVANDER GANZAROLI","EDUARDO MOURA DOS SANTOS","ELISVALDO ESPELHO DA SILVA","EVANDRO KUNDE","FABIO MACHADO ALVES","FABRICIO MACHADO DE FREITAS","FAGNER COSTA SOBRAL","FLAVIANO MORAES SILVA","FRANCINEI COELHO DE SOUZA","FRANCISCO ALEX PONTES DE","GEOVA DOS REIS ALVES","GLEISSON FERNANDES DA SILVA","GUILHERME MATEUS DA SILVA","GUSTAVO HENRIQUE BORGES SILVA","HELIO ALVES DE BRITO","HIAGO DE SALES LIMA","HILTON BRUNO DA COSTA SOUZA","JALES CAMARGO RIBEIRO DE","JEVERSON MOREIRA DOS SANTOS","JOAO BATISTA","JOELDISON GONCALVES DE SOUZA","JORGE BARBOSA DA SILVA NETO","JULIO CESAR DA SILVA","JUVERSON ANACLETO DE JESUS","LEANDRO ALVES PINHEIRO","LUCAS ANDRE DE PAULA","LUIS RODRIGUES CUNHA","LUIZ FELIPE SOUZA SILVA","MARCELO GARCIA TOMAZ","MARCELO LOPES DOS SANTOS","MARCIEL ALVES GONCALVES","MARCOS ALVES MARTINS","MARCOS DE ALMEIDA SILVA","MARIO DA COSTA FARINHA","MAYCON RODRIGUES DE OLIVEIRA","NIKSON PEREIRA SERAFIM","NILTON RODRIGUES DA SILVA","PAULO SERGIO FREIRE DE SOUZA","PEDRO NUNES NETO","RAFAEL DE ALMEIDA SILVA","REGINALDO ALVES AMARO","RENATO ALVES DA ROCHA","RENATO PEREIRA DE SOUZA","RIVAIR FERREIRA BARROSO","TIAGO SILVA LOPES","UILLIAN SILVA CABOCOLINO","VALDINEZ VICENTE DA SILVA","VALDIVINO MARTINS PEREIRA FILHO","VICENTE FRANCISCO RAPOSO","VINICIO AUGUSTO DE ANDRADE","WELTON DE OLIVEIRA LOPES","WENESTON NUNES DA SILVA","WESLEY LIMA PEREIRA","WILLAS CAETANO DE DEUS","WILLIAM GONZAGA DE OLIVEIRA","ZEONE RODRIGUES DE SOUZA"];
+let motoristas = [], clientes = [], editandoId = null;
 
-// Inicializa motoristas se vazio
-if (!localStorage.getItem('ottogr-motoristas')) {
-  const iniciais = motoristasIniciais.map(function(n) { return { nome: n, cpf: "", cnh: "", tel: "" }; });
-  localStorage.setItem('ottogr-motoristas', JSON.stringify(iniciais));
+async function carregarMotoristas() {
+  const res = await fetch(CONFIG.API_URL + '/api/cadastros/motoristas');
+  motoristas = await res.json();
+  renderMotoristas(motoristas);
 }
-let motoristas = JSON.parse(localStorage.getItem('ottogr-motoristas') || '[]');
-let clientes = JSON.parse(localStorage.getItem('ottogr-clientes') || '[]');
-let editando = { tipo: null, idx: null };
+
+async function carregarClientes() {
+  const res = await fetch(CONFIG.API_URL + '/api/cadastros/clientes');
+  clientes = await res.json();
+  renderClientes(clientes);
+}
+
+function renderMotoristas(lista) {
+  const tbody = document.getElementById('tabela-motoristas');
+  if (!lista.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">Nenhum motorista cadastrado.</td></tr>'; return; }
+  tbody.innerHTML = lista.map(m => '<tr><td><b>' + m.nome + '</b></td><td>' + (m.cpf||'—') + '</td><td>' + (m.cnh||'—') + '</td><td>' + (m.telefone||'—') + '</td><td style="display:flex;gap:4px"><button class="btn-edit" onclick="editarMotorista(' + m.id + ')">✏️</button><button class="btn-del" onclick="deletarMotorista(' + m.id + ')">🗑️</button></td></tr>').join('');
+}
+
+function renderClientes(lista) {
+  const tbody = document.getElementById('tabela-clientes');
+  if (!lista.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty">Nenhum cliente cadastrado.</td></tr>'; return; }
+  tbody.innerHTML = lista.map(c => '<tr><td><b>' + c.nome + '</b></td><td>' + (c.cnpj||'—') + '</td><td>' + (c.telefone||'—') + '</td><td style="display:flex;gap:4px"><button class="btn-edit" onclick="editarCliente(' + c.id + ')">✏️</button><button class="btn-del" onclick="deletarCliente(' + c.id + ')">🗑️</button></td></tr>').join('');
+}
+
+function filtrarMotoristas(q) { renderMotoristas(motoristas.filter(m => m.nome.toLowerCase().includes(q.toLowerCase()))); }
+function filtrarClientes(q) { renderClientes(clientes.filter(c => c.nome.toLowerCase().includes(q.toLowerCase()))); }
 
 function setTab(tab) {
-  document.querySelectorAll('.tab-btn').forEach(function(b,i) {
-    b.classList.remove('active');
-    if ((i===0&&tab==='motoristas')||(i===1&&tab==='clientes')) b.classList.add('active');
-  });
+  document.querySelectorAll('.tab-btn').forEach((b,i) => { b.classList.remove('active'); if((i===0&&tab==='motoristas')||(i===1&&tab==='clientes')) b.classList.add('active'); });
   document.getElementById('tab-motoristas').classList.remove('active');
   document.getElementById('tab-clientes').classList.remove('active');
-  document.getElementById('tab-' + tab).classList.add('active');
-}
-
-function renderMotoristas() {
-  const tbody = document.getElementById('tabela-motoristas');
-  if (!motoristas.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">Nenhum motorista cadastrado.</td></tr>'; return; }
-  tbody.innerHTML = motoristas.map(function(m, i) {
-    return '<tr><td><b>' + m.nome + '</b></td><td>' + (m.cpf||'—') + '</td><td>' + (m.cnh||'—') + '</td><td>' + (m.tel||'—') + '</td><td style="display:flex;gap:4px"><button class="btn-edit" onclick="editarMotorista(' + i + ')">✏️</button><button class="btn-del" onclick="deletarMotorista(' + i + ')">🗑️</button></td></tr>';
-  }).join('');
-}
-
-function renderClientes() {
-  const tbody = document.getElementById('tabela-clientes');
-  if (!clientes.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty">Nenhum cliente cadastrado.</td></tr>'; return; }
-  tbody.innerHTML = clientes.map(function(c, i) {
-    return '<tr><td><b>' + c.nome + '</b></td><td>' + (c.cnpj||'—') + '</td><td>' + (c.tel||'—') + '</td><td style="display:flex;gap:4px"><button class="btn-edit" onclick="editarCliente(' + i + ')">✏️</button><button class="btn-del" onclick="deletarCliente(' + i + ')">🗑️</button></td></tr>';
-  }).join('');
+  document.getElementById('tab-'+tab).classList.add('active');
 }
 
 function abrirModal(tipo) {
-  editando = { tipo, idx: null };
+  editandoId = null;
   if (tipo === 'motorista') {
     document.getElementById('modal-motorista-titulo').textContent = '👨 Novo Motorista';
-    document.getElementById('m-nome').value = '';
-    document.getElementById('m-cpf').value = '';
-    document.getElementById('m-cnh').value = '';
-    document.getElementById('m-tel').value = '';
+    ['m-nome','m-cpf','m-cnh','m-tel'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('modal-motorista').classList.add('open');
   } else {
     document.getElementById('modal-cliente-titulo').textContent = '🏢 Novo Cliente';
-    document.getElementById('c-nome').value = '';
-    document.getElementById('c-cnpj').value = '';
-    document.getElementById('c-tel').value = '';
+    ['c-nome','c-cnpj','c-tel'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('modal-cliente').classList.add('open');
   }
 }
 
-function fecharModal(tipo) {
-  document.getElementById('modal-' + tipo).classList.remove('open');
-}
+function fecharModal(tipo) { document.getElementById('modal-'+tipo).classList.remove('open'); }
 
-function salvarMotorista() {
+async function salvarMotorista() {
   const nome = document.getElementById('m-nome').value.trim();
   if (!nome) { alert('Nome obrigatório!'); return; }
-  const obj = { nome, cpf: document.getElementById('m-cpf').value.trim(), cnh: document.getElementById('m-cnh').value.trim(), tel: document.getElementById('m-tel').value.trim() };
-  if (editando.idx !== null) motoristas[editando.idx] = obj;
-  else motoristas.push(obj);
-  localStorage.setItem('ottogr-motoristas', JSON.stringify(motoristas));
-  renderMotoristas();
+  const body = { nome, cpf: document.getElementById('m-cpf').value.trim(), cnh: document.getElementById('m-cnh').value.trim(), telefone: document.getElementById('m-tel').value.trim() };
+  const url = CONFIG.API_URL + '/api/cadastros/motoristas' + (editandoId ? '/'+editandoId : '');
+  const method = editandoId ? 'PUT' : 'POST';
+  await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
   fecharModal('motorista');
+  carregarMotoristas();
 }
 
-function salvarCliente() {
+async function salvarCliente() {
   const nome = document.getElementById('c-nome').value.trim();
   if (!nome) { alert('Nome obrigatório!'); return; }
-  const obj = { nome, cnpj: document.getElementById('c-cnpj').value.trim(), tel: document.getElementById('c-tel').value.trim() };
-  if (editando.idx !== null) clientes[editando.idx] = obj;
-  else clientes.push(obj);
-  localStorage.setItem('ottogr-clientes', JSON.stringify(clientes));
-  renderClientes();
+  const body = { nome, cnpj: document.getElementById('c-cnpj').value.trim(), telefone: document.getElementById('c-tel').value.trim() };
+  const url = CONFIG.API_URL + '/api/cadastros/clientes' + (editandoId ? '/'+editandoId : '');
+  const method = editandoId ? 'PUT' : 'POST';
+  await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
   fecharModal('cliente');
+  carregarClientes();
 }
 
-function editarMotorista(i) {
-  editando = { tipo: 'motorista', idx: i };
-  const m = motoristas[i];
+function editarMotorista(id) {
+  editandoId = id;
+  const m = motoristas.find(x => x.id === id);
   document.getElementById('modal-motorista-titulo').textContent = '✏️ Editar Motorista';
   document.getElementById('m-nome').value = m.nome || '';
   document.getElementById('m-cpf').value = m.cpf || '';
   document.getElementById('m-cnh').value = m.cnh || '';
-  document.getElementById('m-tel').value = m.tel || '';
+  document.getElementById('m-tel').value = m.telefone || '';
   document.getElementById('modal-motorista').classList.add('open');
 }
 
-function editarCliente(i) {
-  editando = { tipo: 'cliente', idx: i };
-  const c = clientes[i];
+function editarCliente(id) {
+  editandoId = id;
+  const c = clientes.find(x => x.id === id);
   document.getElementById('modal-cliente-titulo').textContent = '✏️ Editar Cliente';
   document.getElementById('c-nome').value = c.nome || '';
   document.getElementById('c-cnpj').value = c.cnpj || '';
-  document.getElementById('c-tel').value = c.tel || '';
+  document.getElementById('c-tel').value = c.telefone || '';
   document.getElementById('modal-cliente').classList.add('open');
 }
 
-function deletarMotorista(i) {
-  if (confirm('Remover motorista?')) {
-    motoristas.splice(i, 1);
-    localStorage.setItem('ottogr-motoristas', JSON.stringify(motoristas));
-    renderMotoristas();
-  }
+async function deletarMotorista(id) {
+  if (!confirm('Remover motorista?')) return;
+  await fetch(CONFIG.API_URL + '/api/cadastros/motoristas/' + id, { method: 'DELETE' });
+  carregarMotoristas();
 }
 
-function deletarCliente(i) {
-  if (confirm('Remover cliente?')) {
-    clientes.splice(i, 1);
-    localStorage.setItem('ottogr-clientes', JSON.stringify(clientes));
-    renderClientes();
-  }
+async function deletarCliente(id) {
+  if (!confirm('Remover cliente?')) return;
+  await fetch(CONFIG.API_URL + '/api/cadastros/clientes/' + id, { method: 'DELETE' });
+  carregarClientes();
 }
 
 function toggleGear() { document.getElementById('gear-menu').classList.toggle('open'); }
 function abrirConta() { alert('Usuário: ' + (sessionStorage.getItem('ottogrUsuario')||'adm')); }
 
-renderMotoristas();
-renderClientes();
+carregarMotoristas();
+carregarClientes();
 </script>
 </body>
 </html>
