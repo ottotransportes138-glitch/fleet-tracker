@@ -452,25 +452,25 @@ async function calcularRotaMapa() {
     if (!dD.length) { infoDiv.textContent = "Destino nao encontrado!"; return; }
     const latO=parseFloat(dO[0].lat), lngO=parseFloat(dO[0].lon);
     const latD=parseFloat(dD[0].lat), lngD=parseFloat(dD[0].lon);
-    const osrm = await fetch("https://router.project-osrm.org/route/v1/driving/"+lngO+","+latO+";"+lngD+","+latD+"?overview=full&geometries=geojson");
-    const rota = await osrm.json();
+    const osrm = await fetch(CONFIG.API_URL + "/api/rotas/calcular?lat_o="+latO+"&lng_o="+lngO+"&lat_d="+latD+"&lng_d="+lngD);
+    const rotaData = await osrm.json();
     if (!nvMapa) { mapaDiv.innerHTML=""; mapaDiv.style.cssText="height:420px;border-radius:8px;border:1px solid #ddd;"; nvMapa=L.map("nv-mapa").setView([-15.78,-47.93],5); L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"OSM"}).addTo(nvMapa); }
     if (nvRotaLayer) nvMapa.removeLayer(nvRotaLayer);
-    if (rota.routes && rota.routes.length>0) {
-      nvRotaLayer=L.geoJSON(rota.routes[0].geometry,{style:{color:"#d4a017",weight:4}}).addTo(nvMapa);
-      infoDiv.textContent="Distancia: "+Math.round(rota.routes[0].distance/1000)+" km";
+    if (rotaData.km) {
+      infoDiv.textContent = "Distancia: " + rotaData.km + " km";
       L.marker([latO,lngO]).addTo(nvMapa).bindPopup(origem);
       L.marker([latD,lngD]).addTo(nvMapa).bindPopup(destino);
-      nvMapa.fitBounds(nvRotaLayer.getBounds(),{padding:[20,20]});
+      if (rotaData.geometry) {
+        nvRotaLayer = L.geoJSON(rotaData.geometry,{style:{color:"#d4a017",weight:4}}).addTo(nvMapa);
+        nvMapa.fitBounds(nvRotaLayer.getBounds(),{padding:[20,20]});
+      } else {
+        nvRotaLayer = L.polyline([[latO,lngO],[latD,lngD]],{color:"#d4a017",weight:3,dashArray:"8,8"}).addTo(nvMapa);
+        nvMapa.fitBounds(nvRotaLayer.getBounds(),{padding:[40,40]});
+      }
     }
   } catch(e) { infoDiv.textContent="Erro ao calcular rota."; }
 }
 </script>
-<script>
-async function abrirModalNovaViagem() {
-  document.getElementById('modal-nova-viagem').style.display = 'flex';
-  // Carrega placas
-  try {
     const resP = await fetch(CONFIG.API_URL + "/api/vehicles");
     const veics = await resP.json();
     const sel = document.getElementById("nv-placa");
