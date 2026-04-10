@@ -23,11 +23,20 @@ router.get("/calcular", async (req, res) => {
   try {
     const { lat_o, lng_o, lat_d, lng_d } = req.query;
     if (!lat_o || !lng_o || !lat_d || !lng_d) return res.status(400).json({ error: "Coordenadas obrigatorias" });
-    const url = `https://router.project-osrm.org/route/v1/driving/${lng_o},${lat_o};${lng_d},${lat_d}?overview=full&geometries=geojson`;
     const axios = require("axios");
-    const r = await axios.get(url, { timeout: 10000 });
-    const route = r.data.routes[0];
-    res.json({ km: Math.round(route.distance/1000), geometry: route.geometry });
+    try {
+      const url = "https://router.project-osrm.org/route/v1/driving/" + lng_o + "," + lat_o + ";" + lng_d + "," + lat_d + "?overview=full&geometries=geojson";
+      const r = await axios.get(url, { timeout: 20000 });
+      const route = r.data.routes[0];
+      return res.json({ km: Math.round(route.distance/1000), geometry: route.geometry });
+    } catch(e2) {
+      const R = 6371;
+      const dLat = (parseFloat(lat_d)-parseFloat(lat_o))*Math.PI/180;
+      const dLng = (parseFloat(lng_d)-parseFloat(lng_o))*Math.PI/180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(parseFloat(lat_o)*Math.PI/180)*Math.cos(parseFloat(lat_d)*Math.PI/180)*Math.sin(dLng/2)**2;
+      const km = Math.round(R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))*1.3);
+      return res.json({ km, geometry: null });
+    }
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
