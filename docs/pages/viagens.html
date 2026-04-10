@@ -469,7 +469,6 @@ async function calcularRotaMapa() {
 <script>
 async function abrirModalNovaViagem() {
   document.getElementById('modal-nova-viagem').style.display = 'flex';
-  carregarClientes();
   // Carrega placas
   try {
     const resP = await fetch(CONFIG.API_URL + "/api/vehicles");
