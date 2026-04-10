@@ -18,6 +18,21 @@ async function calcularRotaOSRM(latO, lngO, latD, lngD) {
 }
 
 // Atualiza km_total_calculado de todas as viagens com coordenadas
+// Calcula rota entre dois pontos para o modal
+router.get("/calcular", async (req, res) => {
+  try {
+    const { lat_o, lng_o, lat_d, lng_d } = req.query;
+    if (!lat_o || !lng_o || !lat_d || !lng_d) return res.status(400).json({ error: "Coordenadas obrigatorias" });
+    const url = `https://router.project-osrm.org/route/v1/driving/${lng_o},${lat_o};${lng_d},${lat_d}?overview=full&geometries=geojson`;
+    const axios = require("axios");
+    const r = await axios.get(url, { timeout: 10000 });
+    const route = r.data.routes[0];
+    res.json({ km: Math.round(route.distance/1000), geometry: route.geometry });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 router.post("/calcular-km-rotas", async (req, res) => {
   try {
     const result = await db.query(`
