@@ -6,6 +6,8 @@
 <title>Otto GR — Viagens v2</title>
 <link rel="stylesheet" href="../css/main.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   .page { flex:1; padding:20px; overflow-y:auto; background:#f5f5f5; }
   .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:8px; }
@@ -368,10 +370,10 @@ document.addEventListener("click", function(e) {
 
 <!-- Modal Nova Viagem -->
 <div id="modal-nova-viagem" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center">
-  <div style="background:#fff;border-radius:8px;padding:24px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto">
+  <div style="background:#fff;border-radius:8px;padding:24px;width:960px;max-width:98vw;max-height:95vh;overflow-y:auto;display:flex;gap:20px;align-items:flex-start">
+    <div style="flex:1;min-width:280px">
     <h3 style="font-size:15px;font-weight:700;margin-bottom:16px">➕ Nova Viagem</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div>
         <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Placa *</label>
         <input id="nv-placa" list="lista-placas" onchange="carregarMotorista(this.value)" class="search-input" style="width:100%" placeholder="Digite ou selecione a placa..."/>
       </div>
@@ -381,11 +383,11 @@ document.addEventListener("click", function(e) {
       </div>
       <div>
         <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Origem *</label>
-        <input id="nv-origem" list="lista-cidades" class="search-input" style="width:100%" placeholder="Ex: São Paulo-SP"/>
+        <input id="nv-origem" onchange="calcularRotaMapa()" list="lista-cidades" class="search-input" style="width:100%" placeholder="Ex: São Paulo-SP"/>
       </div>
       <div>
         <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Destino *</label>
-        <input id="nv-destino" list="lista-cidades" class="search-input" style="width:100%" placeholder="Ex: Brasília-DF"/>
+        <input id="nv-destino" onchange="calcularRotaMapa()" list="lista-cidades" class="search-input" style="width:100%" placeholder="Ex: Brasília-DF"/>
       </div>
       <div>
         <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Cliente</label>
@@ -423,49 +425,49 @@ document.addEventListener("click", function(e) {
       <button onclick="fecharModalNovaViagem()" style="background:#f3f4f6;color:#555;border:none;border-radius:4px;padding:8px 16px;font-size:13px;cursor:pointer">Cancelar</button>
       <button onclick="salvarNovaViagem()" style="background:#d4a017;color:#111;border:none;border-radius:4px;padding:8px 20px;font-size:13px;font-weight:700;cursor:pointer">💾 Salvar</button>
     </div>
+    </div>
+    </div>
+    <div style="flex:1;min-width:300px;display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:13px;font-weight:700;color:#111;margin-bottom:4px">🗺 Rota</div>
+      <div id="nv-mapa" style="height:420px;border-radius:8px;border:1px solid #ddd;background:#eee;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:12px">Preencha origem e destino</div>
+      <div id="nv-rota-info" style="font-size:12px;color:#555;text-align:center;min-height:18px"></div>
+    </div>
   </div>
 </div>
 
 <script>
-async function abrirModalNovaViagem() {
-  document.getElementById('modal-nova-viagem').style.display = 'flex';
-  carregarClientes();
-  // Carrega placas
+let nvMapa = null; let nvRotaLayer = null;
+async function calcularRotaMapa() {
+  const origem = document.getElementById("nv-origem").value.trim();
+  const destino = document.getElementById("nv-destino").value.trim();
+  if (!origem || !destino || origem.length < 3 || destino.length < 3) return;
+  const infoDiv = document.getElementById("nv-rota-info");
+  const mapaDiv = document.getElementById("nv-mapa");
+  infoDiv.textContent = "Calculando...";
   try {
-    const resP = await fetch(CONFIG.API_URL + "/api/vehicles");
-    const veics = await resP.json();
-    const sel = document.getElementById("nv-placa");
-    sel.innerHTML = "<option value=\"\">Selecione a placa...</option>";
-    if (Array.isArray(veics)) veics.sort((a,b)=>a.plate.localeCompare(b.plate)).forEach(v=>{const o=document.createElement("option");o.value=v.plate;o.textContent=v.plate+(v.driver?" — "+v.driver:"");sel.appendChild(o);});
-  } catch(e) {}
-  document.getElementById("nv-placa").value = "";
-  document.getElementById('nv-motorista').value = '';
-  document.getElementById('nv-origem').value = '';
-  document.getElementById('nv-destino').value = '';
-  document.getElementById('nv-cliente').value = '';
-  document.getElementById('nv-valor').value = '';
-  document.getElementById('nv-cte').value = '';
-  document.getElementById('nv-erro').style.display = 'none';
+    const gO = await fetch("https://nominatim.openstreetmap.org/search?q=" + encodeURIComponent(origem + ", Brasil") + "&format=json&limit=1");
+    const dO = await gO.json();
+    if (!dO.length) { infoDiv.textContent = "Origem nao encontrada!"; return; }
+    const gD = await fetch("https://nominatim.openstreetmap.org/search?q=" + encodeURIComponent(destino + ", Brasil") + "&format=json&limit=1");
+    const dD = await gD.json();
+    if (!dD.length) { infoDiv.textContent = "Destino nao encontrado!"; return; }
+    const latO = parseFloat(dO[0].lat), lngO = parseFloat(dO[0].lon);
+    const latD = parseFloat(dD[0].lat), lngD = parseFloat(dD[0].lon);
+    const osrm = await fetch("https://router.project-osrm.org/route/v1/driving/" + lngO + "," + latO + ";" + lngD + "," + latD + "?overview=full&geometries=geojson");
+    const rota = await osrm.json();
+    if (!nvMapa) { mapaDiv.innerHTML = ""; mapaDiv.style.background = ""; nvMapa = L.map("nv-mapa").setView([-15.77972,-47.92972],5); L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"OSM"}).addTo(nvMapa); }
+    if (nvRotaLayer) nvMapa.removeLayer(nvRotaLayer);
+    if (rota.routes && rota.routes.length > 0) {
+      nvRotaLayer = L.geoJSON(rota.routes[0].geometry,{style:{color:"#d4a017",weight:4}}).addTo(nvMapa);
+      const km = Math.round(rota.routes[0].distance/1000);
+      infoDiv.textContent = "Distancia: " + km + " km";
+      L.marker([latO,lngO]).addTo(nvMapa).bindPopup(origem);
+      L.marker([latD,lngD]).addTo(nvMapa).bindPopup(destino);
+      nvMapa.fitBounds(nvRotaLayer.getBounds(),{padding:[20,20]});
+    }
+  } catch(e) { infoDiv.textContent = "Erro ao calcular rota."; }
 }
-
-async function carregarMotorista(placa) {
-  if (!placa) return;
-  try {
-    const res = await fetch(CONFIG.API_URL + "/api/viagens");
-    const viagens = await res.json();
-    const sel = document.getElementById("nv-motorista");
-    sel.innerHTML = "<option value=\"\">Selecione o motorista...</option>";
-    
-    // Pega motoristas unicos das viagens desta placa
-    const motoristas = [...new Set(
-      viagens.filter(v => v.placa === placa && v.motorista)
-             .map(v => v.motorista)
-    )].sort();
-    
-    motoristas.forEach(function(m) {
-      const o = document.createElement("option");
-      o.value = m;
-      o.textContent = m;
+</script>
       sel.appendChild(o);
     });
     
