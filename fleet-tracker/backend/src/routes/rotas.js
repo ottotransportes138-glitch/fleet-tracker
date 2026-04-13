@@ -24,12 +24,19 @@ router.get("/calcular", async (req, res) => {
     const { lat_o, lng_o, lat_d, lng_d } = req.query;
     if (!lat_o || !lng_o || !lat_d || !lng_d) return res.status(400).json({ error: "Coordenadas obrigatorias" });
     const axios = require("axios");
+    const ORS_KEY = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjJmYmZjM2FhYzExODQyY2Y4M2YxZGMzOWQ4NGIyY2E1IiwiaCI6Im11cm11cjY0In0=";
     try {
-      const url = "https://router.project-osrm.org/route/v1/driving/" + lng_o + "," + lat_o + ";" + lng_d + "," + lat_d + "?overview=full&geometries=geojson";
-      const r = await axios.get(url, { timeout: 20000 });
-      const route = r.data.routes[0];
-      return res.json({ km: Math.round(route.distance/1000), geometry: route.geometry });
+      const r = await axios.post("https://api.openrouteservice.org/v2/directions/driving-hgv/geojson", {
+        coordinates: [[parseFloat(lng_o), parseFloat(lat_o)], [parseFloat(lng_d), parseFloat(lat_d)]]
+      }, {
+        headers: { "Authorization": ORS_KEY, "Content-Type": "application/json" },
+        timeout: 15000
+      });
+      const feature = r.data.features[0];
+      const km = Math.round(feature.properties.summary.distance / 1000);
+      return res.json({ km, geometry: feature.geometry });
     } catch(e2) {
+      console.error("[ROTAS] ORS erro:", e2.message);
       const R = 6371;
       const dLat = (parseFloat(lat_d)-parseFloat(lat_o))*Math.PI/180;
       const dLng = (parseFloat(lng_d)-parseFloat(lng_o))*Math.PI/180;
