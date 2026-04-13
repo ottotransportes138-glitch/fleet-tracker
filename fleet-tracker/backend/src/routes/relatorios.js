@@ -11,7 +11,9 @@ router.get("/viagens", async (req, res) => {
     if (inicio) { params.push(inicio); query += " AND criado_em >= $" + params.length + "::date"; }
     if (fim) { params.push(fim); query += " AND criado_em < ($" + params.length + "::date + interval '1 day')"; }
     if (placa) { params.push(placa); query += " AND placa = $" + params.length; }
-    if (status) { params.push(status); query += " AND status = $" + params.length; }
+    if (status === "nao-cancelada") { query += " AND status != 'cancelada'"; }
+    else if (status) { params.push(status); query += " AND status = $" + params.length; }
+    else { query += " AND status != 'cancelada'"; }
 
     query += " ORDER BY criado_em DESC LIMIT 1000";
     const { rows } = await db.query(query, params);
