@@ -84,7 +84,9 @@
     </div>
     <div class="filtro-group">
       <span class="filtro-label">Placa</span>
-      <input type="text" id="f-placa" class="filtro-input" placeholder="Ex: RCI5G40" style="width:120px"/>
+      <select id="f-placa" class="filtro-input" style="width:140px">
+        <option value="">Todas</option>
+      </select>
     </div>
     <div class="filtro-group">
       <span class="filtro-label">Motorista</span>
@@ -202,7 +204,21 @@ function limparFiltros() {
   document.getElementById('f-placa').value = '';
   document.getElementById('f-motorista').value = '';
   document.getElementById('f-status').value = '';
-  carregar();
+  async function carregarPlacas() {
+  try {
+    const res = await fetch(CONFIG.API_URL + "/api/vehicles");
+    const veics = await res.json();
+    const sel = document.getElementById("f-placa");
+    veics.sort((a,b) => a.plate.localeCompare(b.plate)).forEach(v => {
+      const o = document.createElement("option");
+      o.value = v.plate;
+      o.textContent = v.plate;
+      sel.appendChild(o);
+    });
+  } catch(e) {}
+}
+carregarPlacas();
+carregar();
 }
 
 function exportarCSV() {
@@ -224,6 +240,20 @@ function exportarCSV() {
 function toggleGear() { document.getElementById('gear-menu').classList.toggle('open'); }
 function abrirConta() { alert('Usuário: ' + (sessionStorage.getItem('ottogrUsuario')||'adm')); }
 
+async function carregarPlacas() {
+  try {
+    const res = await fetch(CONFIG.API_URL + "/api/vehicles");
+    const veics = await res.json();
+    const sel = document.getElementById("f-placa");
+    veics.sort((a,b) => a.plate.localeCompare(b.plate)).forEach(v => {
+      const o = document.createElement("option");
+      o.value = v.plate;
+      o.textContent = v.plate;
+      sel.appendChild(o);
+    });
+  } catch(e) {}
+}
+carregarPlacas();
 carregar();
 </script>
 </body>
