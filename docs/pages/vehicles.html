@@ -171,7 +171,7 @@ function renderizar(lista) {
   document.getElementById('vehicles-grid').innerHTML = lista.map(function(v) {
     return '<div class="vehicle-card">' +
       '<div class="vehicle-plate">' + v.plate + '</div>' +
-      '<div class="vehicle-name">' + (v.name || '—') + '</div>' +
+      '<div class="vehicle-name">👨 ' + (v.name || 'Sem motorista') + '</div>' +
       '<div class="vehicle-info">' +
         '<span>Limite: <b>' + (v.speed_limit || 90) + ' km/h</b></span>' +
         '<span class="' + (v.active ? 'badge-active' : 'badge-inactive') + '">' + (v.active ? 'Ativo' : 'Inativo') + '</span>' +
