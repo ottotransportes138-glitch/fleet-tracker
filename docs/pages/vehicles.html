@@ -102,10 +102,10 @@
       <input class="form-input" id="field-plate" placeholder="Ex: RCI5G40" maxlength="10"/>
     </div>
     <div class="form-group">
-      <label class="form-label">Nome / Motorista</label>
-      <input class="form-input" id="field-name" placeholder="Ex: João Silva"/>
-    </div>
     <div class="form-group">
+      <label class="form-label">Motorista</label>
+      <select class="form-input" id="field-name"><option value="">Selecione o motorista...</option></select>
+    </div>
       <label class="form-label">ID Omnilink (Serial)</label>
       <input class="form-input" id="field-omnilink" placeholder="Ex: 6029718" type="number"/>
     </div>
@@ -191,7 +191,25 @@ function filtrar() {
   }));
 }
 
+async function carregarMotoristaSelect() {
+  try {
+    const res = await fetch(CONFIG.API_URL + "/api/cadastros/motoristas");
+    const motoristas = await res.json();
+    const sel = document.getElementById("field-name");
+    const valorAtual = sel.value;
+    sel.innerHTML = "<option value=\"\">Selecione o motorista...</option>";
+    motoristas.sort((a,b) => a.nome.localeCompare(b.nome)).forEach(function(m) {
+      const o = document.createElement("option");
+      o.value = m.nome;
+      o.textContent = m.nome;
+      sel.appendChild(o);
+    });
+    if (valorAtual) sel.value = valorAtual;
+  } catch(e) {}
+}
+
 function abrirModalNovo() {
+  carregarMotoristaSelect();
   document.getElementById('modal-title').textContent = '➕ Novo Veículo';
   document.getElementById('edit-id').value = '';
   document.getElementById('field-plate').value = '';
@@ -205,6 +223,7 @@ function abrirModalNovo() {
 }
 
 function abrirModalEditar(v) {
+  carregarMotoristaSelect().then(() => { document.getElementById("field-name").value = v.driver || ""; });
   document.getElementById('modal-title').textContent = '✏️ Editar Veículo';
   document.getElementById('edit-id').value = v.id;
   document.getElementById('field-plate').value = v.plate;
