@@ -223,12 +223,12 @@ function abrirModalNovo() {
 }
 
 function abrirModalEditar(v) {
-  carregarMotoristaSelect().then(() => { document.getElementById("field-name").value = v.driver || ""; });
+  carregarMotoristaSelect().then(() => { document.getElementById("field-name").value = v.name || ""; });
   document.getElementById('modal-title').textContent = '✏️ Editar Veículo';
   document.getElementById('edit-id').value = v.id;
   document.getElementById('field-plate').value = v.plate;
-  document.getElementById('field-name').value = v.name || '';
-  document.getElementById('field-omnilink').value = v.omnilink_id || '';
+  document.getElementById("field-plate").value = v.plate;
+  // motorista preenchido pelo carregarMotoristaSelect
   document.getElementById('field-limit').value = v.speed_limit || 90;
   document.getElementById('field-plate').readOnly = true;
   document.getElementById('modal-ok').style.display = 'none';
