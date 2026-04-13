@@ -208,6 +208,23 @@ async function carregarMotoristaSelect() {
   } catch(e) {}
 }
 
+async function carregarMotoristaSelect() {
+  try {
+    const res = await fetch(CONFIG.API_URL + "/api/cadastros/motoristas");
+    const motoristas = await res.json();
+    const sel = document.getElementById("field-name");
+    const valorAtual = sel.value;
+    sel.innerHTML = "<option value=\"\">Selecione o motorista...</option>";
+    motoristas.sort((a,b) => a.nome.localeCompare(b.nome)).forEach(function(m) {
+      const o = document.createElement("option");
+      o.value = m.nome;
+      o.textContent = m.nome;
+      sel.appendChild(o);
+    });
+    if (valorAtual) sel.value = valorAtual;
+  } catch(e) {}
+}
+
 function abrirModalNovo() {
   carregarMotoristaSelect();
   document.getElementById('modal-title').textContent = '➕ Novo Veículo';
