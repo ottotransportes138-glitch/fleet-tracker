@@ -80,7 +80,7 @@ router.get("/", async (req, res) => {
 // Cadastro manual de viagem
 router.post("/manual", async (req, res) => {
   try {
-    const { placa, motorista, origem, destino, cliente, valor_carga, status_carga, tipo_frota, cte } = req.body;
+    const { placa, motorista, origem, destino, cliente, valor_carga, status_carga, tipo_frota, cte, data_carregamento } = req.body;
     if (!placa || !origem || !destino) return res.status(400).json({ error: "Placa, origem e destino obrigatorios" });
 
     const { rows } = await db.query("SELECT id FROM vehicles WHERE plate = $1", [placa]);
@@ -94,8 +94,8 @@ router.post("/manual", async (req, res) => {
     await db.query("UPDATE viagens SET status = 'concluida', concluido_em = NOW() WHERE placa = $1 AND status = 'ativa'", [placa]);
 
     const result = await db.query(
-      "INSERT INTO viagens (vehicle_id, placa, motorista, origem, destino, origem_excel, cliente, status_carga, tipo_frota, status, lat_origem, lng_origem, lat_destino, lng_destino, criado_em) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'ativa',$10,$11,$12,$13,NOW()) RETURNING id",
-      [vehicleId, placa, motorista||null, origem, destino, origem, cliente||null, status_carga||'Em Trânsito', tipo_frota||'RODOTREM', geoOrigem?.lat||null, geoOrigem?.lng||null, geoDestino?.lat||null, geoDestino?.lng||null]
+      "INSERT INTO viagens (vehicle_id, placa, motorista, origem, destino, origem_excel, cliente, status_carga, tipo_frota, status, lat_origem, lng_origem, lat_destino, lng_destino, data_carregamento, criado_em) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'ativa',$10,$11,$12,$13,$14,NOW()) RETURNING id",
+      [vehicleId, placa, motorista||null, origem, destino, origem, cliente||null, status_carga||'Em Trânsito', tipo_frota||'RODOTREM', geoOrigem?.lat||null, geoOrigem?.lng||null, geoDestino?.lat||null, geoDestino?.lng||null, data_carregamento||null]
     );
 
     res.json({ ok: true, id: result.rows[0].id });

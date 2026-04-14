@@ -417,9 +417,13 @@ document.addEventListener("click", function(e) {
       <div style="grid-column:1/-1">
         <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Nº CT-e</label>
         <input id="nv-cte" class="search-input" style="width:100%" placeholder="Número do CT-e"/>
+        <input id="nv-cte" class="search-input" style="width:100%" placeholder="Número do CT-e"/>
+      </div>
+      <div style="grid-column:1/-1">
+        <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">📅 Data do Carregamento</label>
+        <input id="nv-data" type="date" class="search-input" style="width:100%"/>
       </div>
     </div>
-    <div id="nv-erro" style="background:#fee2e2;color:#dc2626;border-radius:4px;padding:8px 12px;font-size:12px;margin-top:12px;display:none"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
       <button onclick="fecharModalNovaViagem()" style="background:#f3f4f6;color:#555;border:none;border-radius:4px;padding:8px 16px;font-size:13px;cursor:pointer">Cancelar</button>
       <button onclick="salvarNovaViagem()" style="background:#d4a017;color:#111;border:none;border-radius:4px;padding:8px 20px;font-size:13px;font-weight:700;cursor:pointer">💾 Salvar</button>
@@ -451,6 +455,7 @@ async function abrirModalNovaViagem() {
   document.getElementById('nv-cliente').value = '';
   document.getElementById('nv-valor').value = '';
   document.getElementById('nv-cte').value = '';
+  document.getElementById('nv-data').value = '';
   document.getElementById('nv-erro').style.display = 'none';
 }
 
@@ -494,6 +499,7 @@ async function salvarNovaViagem() {
   const status = document.getElementById('nv-status').value;
   const tipo = document.getElementById('nv-tipo').value;
   const cte = document.getElementById('nv-cte').value.trim();
+  const data_carregamento = document.getElementById('nv-data').value;
   const erro = document.getElementById('nv-erro');
 
   if (!placa || !origem || !destino) {
@@ -522,7 +528,7 @@ async function salvarNovaViagem() {
     const res = await fetch(CONFIG.API_URL + '/api/viagens/manual', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ placa, motorista, origem, destino, cliente, valor_carga: valor, status_carga: status, tipo_frota: tipo, cte })
+      body: JSON.stringify({ placa, motorista, origem, destino, cliente, valor_carga: valor, status_carga: status, tipo_frota: tipo, cte, data_carregamento })
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
