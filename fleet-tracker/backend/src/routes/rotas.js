@@ -49,6 +49,31 @@ router.get("/calcular", async (req, res) => {
   }
 });
 
+// Recalcula km de todas viagens ativas em background
+router.get("/recalcular-ativas", async (req, res) => {
+  res.json({ ok: true, msg: "Recalculo iniciado em background" });
+  try {
+    const axios = require("axios");
+    const { rows } = await db.query(
+      "SELECT id, lat_origem, lng_origem, lat_destino, lng_destino FROM viagens WHERE status='ativa' AND lat_origem IS NOT NULL AND lat_destino IS NOT NULL AND (km_total_calculado IS NULL OR km_total_calculado = 0)"
+    );
+    console.log("[ROTAS] Recalculando", rows.length, "viagens...");
+    for (const v of rows) {
+      try {
+        await new Promise(r => setTimeout(r, 500));
+        const ORS_KEY = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjJmYmZjM2FhYzExODQyY2Y4M2YxZGMzOWQ4NGIyY2E1IiwiaCI6Im11cm11cjY0In0=";
+        const r2 = await axios.post("https://api.openrouteservice.org/v2/directions/driving-hgv/geojson", {
+          coordinates: [[parseFloat(v.lng_origem), parseFloat(v.lat_origem)], [parseFloat(v.lng_destino), parseFloat(v.lat_destino)]]
+        }, { headers: { "Authorization": ORS_KEY, "Content-Type": "application/json" }, timeout: 15000 });
+        const km = Math.round(r2.data.features[0].properties.summary.distance / 1000);
+        await db.query("UPDATE viagens SET km_total_calculado=$1 WHERE id=$2", [km, v.id]);
+        console.log("[ROTAS] Atualizado", v.id, km, "km");
+      } catch(e2) { console.error("[ROTAS] Erro viagem", v.id, e2.message); }
+    }
+    console.log("[ROTAS] Recalculo concluido!");
+  } catch(e) { console.error("[ROTAS] Erro:", e.message); }
+});
+
 router.post("/calcular-km-rotas", async (req, res) => {
   try {
     const result = await db.query(`
