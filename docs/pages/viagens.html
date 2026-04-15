@@ -478,12 +478,6 @@ async function carregarMotorista(placa) {
     if (veiculo && veiculo.name) sel.value = veiculo.name;
   } catch(e) { console.error("Erro motorista:", e); }
 }
-    });
-    
-    // Se so tem um motorista, seleciona automaticamente
-    if (motoristas.length === 1) sel.value = motoristas[0];
-  } catch(e) { console.error("Erro motorista:", e); }
-}
 
 function fecharModalNovaViagem() {
   document.getElementById('modal-nova-viagem').style.display = 'none';
