@@ -238,12 +238,12 @@ function renderTabela() {
     </tr>`
   }).join("");
 }
+function setFiltro(btn) {
   document.querySelectorAll(".filter-btn").forEach(function(b) { b.classList.remove("active"); });
   btn.classList.add("active");
+  filtroAtual = btn.getAttribute("data-filtro");
   renderTabela();
 }
-
-function filtrar() { renderTabela(); }
 
 async function concluirViagem(id) {
   if (!confirm('Marcar como concluída?')) return;
