@@ -439,7 +439,7 @@ document.addEventListener("click", function(e) {
 <script>
 async function abrirModalNovaViagem() {
   document.getElementById('modal-nova-viagem').style.display = 'flex';
-  carregarClientes();
+  document.getElementById('modal-nova-viagem').style.display = 'flex';
   // Carrega placas
   try {
     const resP = await fetch(CONFIG.API_URL + "/api/vehicles");
@@ -462,22 +462,22 @@ async function abrirModalNovaViagem() {
 async function carregarMotorista(placa) {
   if (!placa) return;
   try {
-    const res = await fetch(CONFIG.API_URL + "/api/viagens");
-    const viagens = await res.json();
+    // Busca motoristas do cadastro
+    const resM = await fetch(CONFIG.API_URL + "/api/cadastros/motoristas");
+    const motoristas = await resM.json();
     const sel = document.getElementById("nv-motorista");
     sel.innerHTML = "<option value=\"\">Selecione o motorista...</option>";
-    
-    // Pega motoristas unicos das viagens desta placa
-    const motoristas = [...new Set(
-      viagens.filter(v => v.placa === placa && v.motorista)
-             .map(v => v.motorista)
-    )].sort();
-    
-    motoristas.forEach(function(m) {
+    motoristas.sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(function(m) {
       const o = document.createElement("option");
-      o.value = m;
-      o.textContent = m;
-      sel.appendChild(o);
+      o.value = m.nome; o.textContent = m.nome; sel.appendChild(o);
+    });
+    // Pre-seleciona motorista vinculado ao veiculo
+    const resV = await fetch(CONFIG.API_URL + "/api/vehicles");
+    const veics = await resV.json();
+    const veiculo = veics.find(v => v.plate === placa);
+    if (veiculo && veiculo.name) sel.value = veiculo.name;
+  } catch(e) { console.error("Erro motorista:", e); }
+}
     });
     
     // Se so tem um motorista, seleciona automaticamente
