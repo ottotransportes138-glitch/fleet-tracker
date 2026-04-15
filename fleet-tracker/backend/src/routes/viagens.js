@@ -72,7 +72,7 @@ router.get("/", async (req, res) => {
       let kmHodometro = 0;
       if (v.odometro_inicio && v.odometro_inicio > 0) {
         const { rows: posAtual } = await db.query(
-          'SELECT odometer FROM positions WHERE vehicle_id=\ AND odometer > 0 ORDER BY recorded_at DESC LIMIT 1',
+          'SELECT odometer FROM positions WHERE vehicle_id=$1 AND odometer > 0 ORDER BY recorded_at DESC LIMIT 1',
           [v.vehicle_id]
         );
         if (posAtual.length > 0 && posAtual[0].odometer > v.odometro_inicio) {
