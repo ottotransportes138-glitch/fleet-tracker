@@ -68,8 +68,19 @@ router.get("/", async (req, res) => {
     `);
     const result = await Promise.all(rows.map(async (v) => {
       const km = await calcularKmPercorrido(v.vehicle_id, v.criado_em, v.odometro_inicio);
+      // Calcula km pelo hodometro atual
+      let kmHodometro = 0;
+      if (v.odometro_inicio && v.odometro_inicio > 0) {
+        const { rows: posAtual } = await db.query(
+          'SELECT odometer FROM positions WHERE vehicle_id=\ AND odometer > 0 ORDER BY recorded_at DESC LIMIT 1',
+          [v.vehicle_id]
+        );
+        if (posAtual.length > 0 && posAtual[0].odometer > v.odometro_inicio) {
+          kmHodometro = Math.round((posAtual[0].odometer - v.odometro_inicio) / 1000 * 10) / 10;
+        }
+      }
       const pct = v.km_total_calculado > 0 ? Math.min(Math.round(km/v.km_total_calculado*100), 100) : 0;
-      return { ...v, km_percorrido: km, progresso_pct: pct };
+      return { ...v, km_percorrido: kmHodometro > 0 ? kmHodometro : km, progresso_pct: pct };
     }));
     res.json(result);
   } catch (err) {

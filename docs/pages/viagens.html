@@ -145,10 +145,10 @@
           <th>Origem</th>
           <th>Destino</th>
           <th>Status</th>
+          <th>Status</th>
+          <th>KM</th>
           <th>Ref.</th>
           <th></th>
-        </tr>
-      </thead>
       <tbody id="tabela-body">
         <tr><td colspan="10" class="empty">⏳ Carregando...</td></tr>
       </tbody>
@@ -223,11 +223,11 @@ function renderTabela() {
       <td style="font-size:12px">${v.origem_excel || '—'}</td>
       <td style="font-size:12px;font-weight:600">${v.destino || '—'}</td>
       <td><span class="status-badge ${sc}">${v.status_carga || '—'}</span></td>
-      <td style="font-size:11px;color:#aaa">${v.ref_data || '—'}</td>
-      <td><button class="btn-concluir" onclick="concluirViagem('${v.id}')">✅</button></td>
-    </tr>`;
-  }).join('');
-}
+      <td><span class="status-badge ${sc}">${v.status_carga || "—"}</span></td>
+      <td style="font-size:12px;font-weight:700;color:#111">${v.km_percorrido > 0 ? v.km_percorrido + " km" : "—"}</td>
+      <td style="font-size:11px;color:#aaa">${v.ref_data || "—"}</td>
+      <td><button class="btn-concluir" onclick="concluirViagem(${JSON.stringify(v.id)})">✅</button></td>
+    </tr>`);
 
 function setFiltro(btn) {
   filtroAtual = btn.getAttribute("data-filtro");
