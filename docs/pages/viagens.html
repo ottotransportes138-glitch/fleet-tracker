@@ -146,10 +146,10 @@
           <th>Destino</th>
           <th>Status</th>
           <th>Status</th>
+          <th>KM Total</th>
           <th>Ref.</th>
           <th>Progresso</th>
           <th></th>
-      <tbody id="tabela-body">
         <tr><td colspan="10" class="empty">⏳ Carregando...</td></tr>
       </tbody>
     </table>
@@ -224,13 +224,13 @@ function renderTabela() {
       <td style="font-size:12px;font-weight:600">${v.destino || '—'}</td>
       <td><span class="status-badge ${sc}">${v.status_carga || "—"}</span></td>
       <td><span class="status-badge ${sc}">${v.status_carga || "—"}</span></td>
+      <td style="font-size:12px;font-weight:700">${v.km_total_calculado > 0 ? Math.round(v.km_total_calculado) + " km" : "—"}</td>
       <td style="font-size:11px;color:#aaa">${v.data_carregamento ? new Date(v.data_carregamento).toLocaleDateString("pt-BR") : (v.ref_data || "—")}</td>
-      <td style="min-width:140px">
-        <div style="display:flex;align-items:center;gap:6px">
-          <div style="flex:1;height:6px;background:#e5e7eb;border-radius:3px;min-width:60px">
-            <div style="height:100%;background:#d4a017;border-radius:3px;width:${v.km_total_calculado > 0 ? Math.min(Math.round((v.km_percorrido||0)/v.km_total_calculado*100),100) : 0}%"></div>
-          </div>
-          <span style="font-size:11px;white-space:nowrap">${v.km_total_calculado > 0 ? Math.min(Math.round((v.km_percorrido||0)/v.km_total_calculado*100),100) + "%" : "—"}</span>
+      <td style="min-width:120px">
+        <div style="height:6px;background:#e5e7eb;border-radius:3px">
+          <div style="height:100%;background:#d4a017;border-radius:3px;width:${v.km_total_calculado > 0 ? Math.min(Math.round((v.km_percorrido||0)/v.km_total_calculado*100),100) : 0}%"></div>
+        </div>
+        <div style="font-size:10px;color:#888;margin-top:2px">${v.km_percorrido > 0 ? v.km_percorrido + " km rodados" : "—"}</div>
         </div>
         <div style="font-size:10px;color:#888;margin-top:2px">${v.km_percorrido > 0 ? v.km_percorrido + " / " + Math.round(v.km_total_calculado) + " km" : (v.km_total_calculado > 0 ? Math.round(v.km_total_calculado) + " km total" : "—")}</div>
       </td>
