@@ -374,7 +374,7 @@ document.addEventListener("click", function(e) {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div>
         <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Placa *</label>
-        <input id="nv-placa" list="lista-placas" onchange="carregarMotorista(this.value)" class="search-input" style="width:100%" placeholder="Digite ou selecione a placa..."/>
+        <select id="nv-placa" onchange="carregarMotorista(this.value)" class="search-input" style="width:100%"><option value="">Selecione a placa...</option></select>
       </div>
       <div>
         <label style="font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px">Motorista</label>
