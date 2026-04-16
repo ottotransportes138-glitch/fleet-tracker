@@ -165,7 +165,7 @@ function updateSidebarList(vehicles) {
     const km = parseFloat(viagem.km_percorrido) || 0;
     const kmTotal = parseFloat(viagem.km_total_calculado) || 0;
     const pct = kmTotal > 0 ? Math.min(Math.round(km/kmTotal*100), 100) : 0;
-    const tipo = viagem.tipo_frota ? `<span style="font-size:9px;color:#555;background:#222;padding:1px 5px;border-radius:4px;margin-left:4px">${viagem.tipo_frota}</span>` : '';
+    const tipo = viagem.tipo_frota ? `<span style="font-size:9px;color:#aaa;background:#333;padding:1px 4px;border-radius:3px;margin-left:4px">${viagem.tipo_frota}</span>` : "";
 
     const statusColors = {
       'Em Trânsito':'#3b82f6','Carregar':'#f59e0b','Carregado':'#8b5cf6',
@@ -195,10 +195,10 @@ function updateSidebarList(vehicles) {
       <div style="width:7px;height:7px;border-radius:50%;background:${color};flex-shrink:0;margin-top:4px"></div>
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:4px">
-          <span style="font-weight:700;font-size:11px;color:#fff;font-family:monospace">${v.plate}</span>
+          <span style="font-weight:700;font-size:12px;color:#d4a017;font-family:monospace;letter-spacing:1px">${v.plate}</span>
           ${tipo}
         </div>
-        <div style="font-size:10px;color:#666">${speed} km/h ${over?"⚠️":""}</div>
+        <div style="font-size:10px;color:#888">${speed} km/h ${over?"⚠️":""}</div>
         ${viagemHtml}
       </div>
     </div>`
