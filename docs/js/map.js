@@ -174,34 +174,34 @@ function updateSidebarList(vehicles) {
     const scColor = statusColors[viagem.status_carga] || '#6b7280';
 
     const viagemHtml = viagem.destino ? `
-      <div style="margin-top:4px;font-size:11px;color:#aaa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-        📍 ${viagem.origem_excel||viagem.origem||'?'} → <b style="color:#d4a017">${viagem.destino||'?'}</b>
+      <div style="font-size:10px;color:#888;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+        📍 ${viagem.origem_excel||viagem.origem||"?"} → <b style="color:#d4a017">${viagem.destino||"?"}</b>
       </div>
-      <div style="margin-top:3px">
-        <span style="background:${scColor}22;color:${scColor};padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700">${viagem.status_carga||''}</span>
+      <div style="margin-top:2px">
+        <span style="background:${scColor}22;color:${scColor};padding:1px 5px;border-radius:6px;font-size:9px;font-weight:700">${viagem.status_carga||""}</span>
       </div>
       ${kmTotal > 0 ? `
-      <div style="margin-top:5px">
-        <div style="display:flex;justify-content:space-between;font-size:10px;color:#555;margin-bottom:2px">
+      <div style="margin-top:3px">
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:#555;margin-bottom:1px">
           <span>${km} km</span><span>${pct}% de ${kmTotal}km</span>
         </div>
-        <div style="height:4px;background:#222;border-radius:2px">
+        <div style="height:3px;background:#222;border-radius:2px">
           <div style="height:100%;width:${pct}%;background:#d4a017;border-radius:2px"></div>
         </div>
-      </div>` : ''}
-    ` : '';
+      </div>` : ""}
+    ` : "";
 
     return `<div onclick="focusVehicle('${id}')" style="cursor:pointer;padding:8px 10px;border-bottom:1px solid #1a1a1a;display:flex;align-items:flex-start;gap:8px">
-      <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;margin-top:3px"></div>
+      <div style="width:7px;height:7px;border-radius:50%;background:${color};flex-shrink:0;margin-top:4px"></div>
       <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center">
-          <span style="font-weight:700;font-size:13px;color:#fff">${v.plate}</span>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span style="font-weight:700;font-size:11px;color:#fff;font-family:monospace">${v.plate}</span>
           ${tipo}
         </div>
-        <div style="font-size:11px;color:#888">${speed} km/h ${over?'⚠️':''}</div>
+        <div style="font-size:10px;color:#666">${speed} km/h ${over?"⚠️":""}</div>
         ${viagemHtml}
       </div>
-    </div>`;
+    </div>`
   }).join('');
 }
 
