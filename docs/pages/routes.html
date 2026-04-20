@@ -375,5 +375,100 @@ document.addEventListener("click", function(e) {
   }
 });
 </script>
+<div id="modal-cerca" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:8px;padding:24px;width:380px">
+    <h3 style="font-size:15px;font-weight:700;margin-bottom:16px">📍 Nova Cerca</h3>
+    <div style="margin-bottom:12px">
+      <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Nome da Cerca *</label>
+      <input id="cerca-nome" class="search-input" style="width:100%" placeholder="Ex: Oficina Anapolis"/>
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Raio (metros)</label>
+      <input id="cerca-raio" type="number" class="search-input" style="width:100%" value="500" placeholder="500"/>
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Status ao Entrar</label>
+      <select id="cerca-status" style="width:100%;border:1px solid #ddd;border-radius:4px;padding:7px 12px;font-size:13px">
+        <option value="Manutencao">Manutenção</option>
+        <option value="Vazio">Vazio</option>
+        <option value="Carregar">Carregar</option>
+        <option value="Carregado">Carregado</option>
+      </select>
+    </div>
+    <div id="cerca-coords" style="font-size:12px;color:#888;margin-bottom:12px">Clique no mapa para definir o centro</div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="fecharModalCerca()" style="background:#f3f4f6;border:none;border-radius:4px;padding:8px 16px;cursor:pointer">Cancelar</button>
+      <button onclick="salvarCerca()" style="background:#d4a017;color:#111;border:none;border-radius:4px;padding:8px 20px;font-weight:700;cursor:pointer">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let cercaLat = null, cercaLng = null, cercaCircle = null;
+let cercasLayer = [];
+
+async function carregarCercas() {
+  try {
+    const res = await fetch(CONFIG.API_URL + "/api/cercas");
+    const cercas = await res.json();
+    cercasLayer.forEach(function(l) { map.removeLayer(l); });
+    cercasLayer = [];
+    cercas.forEach(function(c) {
+      const circle = L.circle([c.lat, c.lng], {
+        radius: c.raio_metros,
+        color: "#ef4444",
+        fillColor: "#ef4444",
+        fillOpacity: 0.1,
+        weight: 2
+      }).addTo(map).bindPopup(
+        "<b>" + c.nome + "</b><br>Raio: " + c.raio_metros + "m<br>Status: " + c.status_carga +
+        "<br><button onclick=\"deletarCerca(" + c.id + ")\" style=\"margin-top:6px;background:#fee2e2;color:#dc2626;border:none;border-radius:4px;padding:3px 10px;cursor:pointer\">🗑️ Remover</button>"
+      );
+      cercasLayer.push(circle);
+    });
+  } catch(e) {}
+}
+
+function abrirModalCerca() {
+  cercaLat = null; cercaLng = null;
+  document.getElementById("cerca-coords").textContent = "Clique no mapa para definir o centro";
+  document.getElementById("modal-cerca").style.display = "flex";
+  map.once("click", function(e) {
+    cercaLat = e.latlng.lat;
+    cercaLng = e.latlng.lng;
+    document.getElementById("cerca-coords").textContent = "Centro: " + cercaLat.toFixed(4) + ", " + cercaLng.toFixed(4);
+    if (cercaCircle) map.removeLayer(cercaCircle);
+    cercaCircle = L.circle([cercaLat, cercaLng], { radius: parseInt(document.getElementById("cerca-raio").value)||500, color:"#ef4444", fillOpacity:0.1 }).addTo(map);
+  });
+}
+
+function fecharModalCerca() {
+  document.getElementById("modal-cerca").style.display = "none";
+  if (cercaCircle) { map.removeLayer(cercaCircle); cercaCircle = null; }
+}
+
+async function salvarCerca() {
+  if (!cercaLat || !cercaLng) { alert("Clique no mapa para definir o centro!"); return; }
+  const nome = document.getElementById("cerca-nome").value.trim();
+  if (!nome) { alert("Nome obrigatorio!"); return; }
+  const raio = parseInt(document.getElementById("cerca-raio").value) || 500;
+  const status_carga = document.getElementById("cerca-status").value;
+  await fetch(CONFIG.API_URL + "/api/cercas", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nome, lat: cercaLat, lng: cercaLng, raio_metros: raio, status_carga })
+  });
+  fecharModalCerca();
+  carregarCercas();
+}
+
+async function deletarCerca(id) {
+  if (!confirm("Remover cerca?")) return;
+  await fetch(CONFIG.API_URL + "/api/cercas/" + id, { method: "DELETE" });
+  carregarCercas();
+}
+
+carregarCercas();
+</script>
 </body>
 </html>

@@ -70,6 +70,26 @@ async function verificarSaidaOrigem() {
         console.error("[SAIDA-ORIGEM] Erro", viagem.placa, e.message);
       }
     }
+
+    // Verifica cercas
+    try {
+      const { rows: cercas } = await db.query("SELECT * FROM cercas WHERE ativo=true");
+      for (const viagem of viagens) {
+        const { rows: pos } = await db.query(
+          "SELECT lat, lng FROM positions WHERE vehicle_id=$1 ORDER BY recorded_at DESC LIMIT 1",
+          [viagem.vehicle_id]
+        );
+        if (!pos.length) continue;
+        for (const cerca of cercas) {
+          const dist = distanciaKm(parseFloat(cerca.lat), parseFloat(cerca.lng), parseFloat(pos[0].lat), parseFloat(pos[0].lng)) * 1000;
+          if (dist <= cerca.raio_metros) {
+            await db.query("UPDATE viagens SET status_carga=$1 WHERE id=$2 AND status_carga != $1", [cerca.status_carga, viagem.id]);
+            console.log("[CERCA]", viagem.placa, "entrou na cerca", cerca.nome, "-> status:", cerca.status_carga);
+          }
+        }
+      }
+    } catch(e) { console.error("[CERCA] Erro:", e.message); }
+
   } catch(e) {
     console.error("[SAIDA-ORIGEM] Erro geral:", e.message);
   }
