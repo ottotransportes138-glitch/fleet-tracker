@@ -59,7 +59,7 @@ async function verificarSaidaOrigem() {
 
         // Calcula km percorrido pelo hodometro
         if (viagem.odometro_inicio && viagem.odometro_inicio > 0 && pos[0].odometer > viagem.odometro_inicio) {
-          const kmPercorrido = Math.round((pos[0].odometer - viagem.odometro_inicio) / 1000 * 10) / 10;
+          const kmPercorrido = Math.round((pos[0].odometer - viagem.odometro_inicio) / 100000 * 10) / 10;
           await db.query(
             "UPDATE viagens SET km_percorrido = $1 WHERE id = $2",
             [kmPercorrido, viagem.id]
